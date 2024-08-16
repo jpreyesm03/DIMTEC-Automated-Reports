@@ -8,6 +8,9 @@ import pandas as pd # type: ignore
 import json
 from datetime import datetime
 import locale
+import numpy as np # type: ignore
+import matplotlib.pyplot as plt # type: ignore
+from matplotlib.ticker import FuncFormatter # type: ignore
     
 
 
@@ -75,7 +78,7 @@ for section in config.sections():
     querystring = {
     "start": "2024-07-01T00:00:00Z",
     "end": "2024-08-01T00:00:00Z",
-    "interval": "DAY",
+    "interval": "HOUR",
     "objectIds": "all",
     "metrics": "bytesOffload, bytesOffloadAvg, bytesOffloadMax, bytesOffloadMin, edgeBitsPerSecond, edgeBitsPerSecondMax, edgeBitsPerSecondMin, edgeBytesTotal, midgressBitsPerSecond, midgressBitsPerSecondMax, midgressBitsPerSecondMin, midgressBytesTotal, originBitsPerSecond, originBitsPerSecondMax, originBitsPerSecondMin, originBytesTotal", # Al menos una métrica es necesaria...
     "filters": "ca=cacheable",
@@ -87,7 +90,7 @@ for section in config.sections():
     print(f"Status Code: {result.status_code}")
     mes = find_month(querystring.get("start"))
     response_json = result.json()
-    print(f"Response JSON: {json.dumps(response_json, indent=2)}")
+    # print(f"Response JSON: {json.dumps(response_json, indent=2)}")
     data = response_json.get('data', [])
     summary_stats = response_json.get('summaryStatistics', [])
     length = len(data)
@@ -98,17 +101,61 @@ for section in config.sections():
         "originBitsPerSecond" : []
     }
     for value in data:
-        values_dictionary["bytesOffload"].append(round(float(value.get('bytesOffload'))),2)
-        values_dictionary["edgeBitsPerSecond"].append(round(float(value.get('edgeBitsPerSecond'))),2)
-        values_dictionary["midgressBitsPerSecond"].append(round(float(value.get('midgressBitsPerSecond'))),2)
-        values_dictionary["originBitsPerSecond"].append(round(float(value.get('originBitsPerSecond'))),2)
-        # date = value.get('startdatetime')
-        # edgeBitsPerSec = str(round(float(value.get('edgeBitsPerSecond'))*si.A,2)).replace('A', 'B')
-        # midgressBitsPerSec = str(round(float(value.get('midgressBitsPerSecond'))*si.A,2)).replace('A', 'B')
-        # originBitsPerSec = str(round(float(value.get('originBitsPerSecond'))*si.A,2)).replace('A', 'B')
-        # print("At " + date + " there were Edge: " + edgeBitsPerSec + " | Midgress: " + midgressBitsPerSec + " | Origin: " + originBitsPerSec) # " | with a EdgeMax of: " + edgeMax
-    # for metric, data in summary_stats.items():
-    #     print(f"{metric}: {str(round(float(data['value'])*si.A,2)).replace('A', 'B')}")
-    # print(f"{section}")
-    # print("\n"*4 + "-"*40)
+        values_dictionary["bytesOffload"].append(int(float(value.get('bytesOffload'))))
+        values_dictionary["edgeBitsPerSecond"].append(int(float(value.get('edgeBitsPerSecond'))))
+        values_dictionary["midgressBitsPerSecond"].append(int(float(value.get('midgressBitsPerSecond'))))
+        values_dictionary["originBitsPerSecond"].append(int(float(value.get('originBitsPerSecond'))))
+    
+    dates = np.linspace(1, length, length)  # Days of the month
+    edgeBitsPerSecond = np.array(values_dictionary["edgeBitsPerSecond"])  # Replace with actual edge data
+    midgressBitsPerSecond = np.array(values_dictionary["midgressBitsPerSecond"])  # Replace with actual midgress data
+    originBitsPerSecond = np.array(values_dictionary["originBitsPerSecond"])  # Replace with actual origin data
+    bytesOffload = np.array(values_dictionary["bytesOffload"])  # Replace with actual offload data
+    
+    fig, ax1 = plt.subplots(figsize=(14, 6))
+    plt.subplots_adjust(left=0.09, right=0.87, top=0.9, bottom=0.1)
+    # Plot Edge, Midgress, and Origin on the left y-axis
+    line1, = ax1.plot(dates, edgeBitsPerSecond, label='Edge', color='green')
+    line2, = ax1.plot(dates, midgressBitsPerSecond, label='Midgress', color='purple')
+    line3, = ax1.plot(dates, originBitsPerSecond, label='Origin', color='orange')
+    ax1.set_ylabel('Bits/sec')
+    # ax1.legend(loc='upper left', bbox_to_anchor=(1.05, 1), borderaxespad=0.1)
+    
+    
+
+    # Create a second y-axis for Offload
+    ax2 = ax1.twinx()
+    line4, = ax2.plot(dates, bytesOffload, label='Offload', color='blue')
+    ax2.set_ylabel('Offload', labelpad=0)
+    ax2.set_ylim(0, 100)
+    # ax2.legend(loc='upper left', bbox_to_anchor=(1.05, 1), borderaxespad=0.1)
+
+    # Add title and grid
+    plt.title(f'{section}: Edge, Midgress, and Origin bits/sec with Offload')
+    ax1.grid(True)
+
+    # Combine legends from both y-axes
+    lines = [line4, line1, line2, line3]
+    labels = [line4.get_label(), line1.get_label(), line2.get_label(), line3.get_label()]
+
+    # Display the combined legend
+    fig.legend(lines, labels, loc='upper left', bbox_to_anchor=(0.9, 0.9), borderaxespad=1.2)
+
+    tick_positions = np.arange(1, length, 2*24)  # Custom positions for ticks (every 5 days)
+    tick_labels = [f'Jul 1' if t == 1 else f'Jul {int(t//24)}' for t in tick_positions]  # Custom labels
+    
+    ax1.set_xlim(min(dates), max(dates))
+    ax1.set_ylim(bottom=0)
+    ax1.set_xticks(tick_positions)
+    ax1.set_xticklabels(tick_labels, rotation=0)  # Rotate for readability
+    ax1.spines['bottom'].set_color('none')  # Remove the right border
+    ax2.spines['bottom'].set_color('none')  # Remove the right border
+
+    ax1.yaxis.set_major_formatter(FuncFormatter(lambda x, pos: f'{str(round(int(x)*si.A,2)).replace("A", "B")}/s'))
+    ax2.yaxis.set_major_formatter(FuncFormatter(lambda x, pos: f'{int(x)}%'))
+
+    # Show the plot
+    plt.show()
+    print("\n"*4 + "-"*10 + section + "-"*10 + "\n"*4)
+    
     
