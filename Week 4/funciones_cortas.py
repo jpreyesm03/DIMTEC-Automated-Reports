@@ -91,7 +91,7 @@ def seleccionar_reportes(archivo, fechas, counter, empresa=""):
         números_elegidos = [1,2,3,4,5,6]
     else:
         while (eleccion != -1 or len(números_elegidos) < 6):
-            eleccion = int_checker("Seleccione una opción (escoja -1 si ya seleccionó todos los de su interés): ", [-1,6]):
+            eleccion = int_checker("Seleccione una opción (escoja -1 si ya seleccionó todos los de su interés): ", [-1,6])
             if (eleccion == 0):
                 números_elegidos = [1,2,3,4,5,6]
             elif (eleccion in números_elegidos):
