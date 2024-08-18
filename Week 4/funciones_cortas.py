@@ -1,4 +1,4 @@
-from generador_tablas_y_graficas import obtener_cpcodes # type: ignore
+from generador_tablas_y_graficas import obtener_cpcodes, hits_tipo_de_respuesta # type: ignore
 import tkinter as tk
 from tkinter import filedialog
 import re
