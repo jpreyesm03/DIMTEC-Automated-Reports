@@ -1,10 +1,13 @@
-from datetime import datetime, timedelta
-
-# Given date and time
-given_date = datetime(2024, 9, 1, 20, 44)
-
-# Subtract 92 days
-date_92_days_ago = given_date - timedelta(days=92)
-
-# Print the result
-print("The date exactly 92 days before", given_date.strftime("%B %d, %Y at %H:%M"), "is", date_92_days_ago.strftime("%B %d, %Y at %H:%M"))
+empresa = "Loco"
+print("Jordi")
+print(f"""
+          De las siguientes opciones de tablas/gráficas, seleccione aquellas que
+          desee agregar a su reporte de {empresa}:
+          1. Tabla: Tráfico consumido por CPcode
+          2. Tabla: Tráfico Total y Estadísticas (Bytes Total, Bytes por segundo Total, Mínimo y Máximo)
+          3. Gráfica: Tráfico por día (Edge, Midgress, Origin y Offload)
+          4. Gráfica: Hits al Origen por tipo de respuesta (0xx, 1xx, 2xx, 3xx, 4xx, 5xx)
+          5. Tabla: Hits por tipo de respuesta, ordenados por Edge Hits
+          6. Tabla: Hits por tipo de respuesta, de únicamente un CPcode
+          """)
+print("sobres")
