@@ -70,7 +70,7 @@ def file_closed(file_path):
         print(f"Error: The file '{file_path}' is already open. Please close it before running the script.")
         return False
 
-def main():
+def main(objectIDs = "all"):
     # Parse the .edgerc file
     config = configparser.ConfigParser()
     config.read(r'C:\Users\jprey\OneDrive\Escritorio\JP\DIMTEC\Week 2\El Tiempo\.edgerc')  # replace with the path to your .edgerc file if it's not in the same directory
@@ -80,7 +80,7 @@ def main():
         querystring = {
             "start": "2024-06-01T06:00:00Z",
             "end": "2024-07-01T06:00:00Z",
-            "objectIds": "all",
+            "objectIds": objectIDs,
             "metrics": "",
             "filters": "ca=cacheable",
             }
@@ -139,7 +139,7 @@ def main():
             
             
         else:
-            # Handle the case where the file is open
+            # Handle the case where the file is open!
             print("-"*15 + section + "-"*15 + "\n"*8)
     current_file_path = __file__
     file_name = os.path.basename(current_file_path)
