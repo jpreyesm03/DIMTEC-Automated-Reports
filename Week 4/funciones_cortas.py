@@ -114,7 +114,7 @@ def seleccionar_cpcode(archivo, lista_de_fechas, empresa):
           desea generar varias tablas (una por CPCODE), favor de ingresar
           uno por uno. Este proceso puede tardar un momento...
           """)
-    cpcodes = obtener_cpcodes(archivo, lista_de_fechas[0], lista_de_fechas[1])
+    cpcodes = obtener_cpcodes(archivo, empresa, lista_de_fechas[0], lista_de_fechas[1])
     cpcodes_elegidos = []
     imprimir_empresas_o_cpcodes(cpcodes, True, cpcodes=True)
     eleccion = int_checker("Escoja qué CPcode le interesa (número): ", [0, len(cpcodes)])

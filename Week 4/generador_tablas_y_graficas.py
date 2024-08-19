@@ -1,5 +1,7 @@
+def obtener_cpcodes(archivo, empresa, fecha_inicial, fecha_final):
+    config = configparser.ConfigParser()
+    config.read(archivo)
 
-def obtener_cpcodes():
     lista_de_cpcodes = []
     return lista_de_cpcodes
 
