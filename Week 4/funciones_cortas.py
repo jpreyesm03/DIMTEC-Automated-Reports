@@ -158,11 +158,11 @@ def reportes_distintos():
     else:
         return False
 
-def reportes_generales(archivo, fecha):
+def reportes_generales(archivo, fechas):
     empresas = obtener_credenciales(archivo, extraer_todas_las_empresas(archivo))
     for empresa, credenciales in empresas.items():
         crear_folder(empresa, fechas)
-        tabla_de_trafico_por_cpcode(empresa, credenciales[0], credenciales[1], credenciales[2], credenciales[3], fecha)
+        tabla_de_trafico_por_cpcode(empresa, credenciales[0], credenciales[1], credenciales[2], credenciales[3], fechas)
         return
     return
 
@@ -195,15 +195,11 @@ def seleccionar_empresas(archivo):
     if eleccion == 0:
         print_next("Ha seleccionado todas las empresas.")
         return obtener_credenciales(archivo, empresas)
-        print_next("Ha seleccionado todas las empresas.")
-        return obtener_credenciales(archivo, empresas)
     else:
         first_time = False
         while (eleccion != -1 and len(empresas_escogidas) < len(empresas)):
             
             if eleccion == 0:
-                print_next("Ha seleccionado todas las empresas.")
-                return obtener_credenciales(archivo, empresas)
                 print_next("Ha seleccionado todas las empresas.")
                 return obtener_credenciales(archivo, empresas)
             elif empresas[eleccion - 1] in empresas_escogidas:
@@ -216,9 +212,7 @@ def seleccionar_empresas(archivo):
             eleccion = int_checker("Escoja qué empresa le interesa (número): ", [-1, len(empresas)])
 
     if (len(empresas_escogidas) == len(empresas)):
-    if (len(empresas_escogidas) == len(empresas)):
         print_next("Ha seleccionado todas las empresas.")
-        return obtener_credenciales(archivo, empresas)
         return obtener_credenciales(archivo, empresas)
     else:
         print("Has seleccionado: ", end="")
