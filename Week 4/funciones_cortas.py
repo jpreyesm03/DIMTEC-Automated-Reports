@@ -158,11 +158,11 @@ def reportes_distintos():
     else:
         return False
 
-def reportes_generales(archivo, fechas):
+def reportes_generales(archivo, itworks):
     empresas = obtener_credenciales(archivo, extraer_todas_las_empresas(archivo))
     for empresa, credenciales in empresas.items():
-        crear_folder(empresa, fechas)
-        tabla_de_trafico_por_cpcode(empresa, credenciales[0], credenciales[1], credenciales[2], credenciales[3], fechas)
+        crear_folder(empresa, itworks)
+        tabla_de_trafico_por_cpcode(empresa, credenciales[0], credenciales[1], credenciales[2], credenciales[3], itworks)
         return
     return
 
