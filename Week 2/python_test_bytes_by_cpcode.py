@@ -81,7 +81,6 @@ for section in config.sections():
     }
     mes = find_month(querystring.get("start"))
     # result = s.get(urljoin(baseurl, '/contract-api/v1/contracts/identifiers'))
-    # result = s.get(urljoin(baseurl, '/cprg/v1/cpcodes'))
     result = s.get(urljoin(baseurl, path), params=querystring)
     print(f"Configuration: {section}")
     print(f"Status Code: {result.status_code}")
