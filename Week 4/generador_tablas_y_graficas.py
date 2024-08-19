@@ -2,7 +2,7 @@ import configparser
 import requests # type: ignore
 from akamai.edgegrid import EdgeGridAuth # type: ignore
 from urllib.parse import urljoin
-
+import forallpeople as si # type: ignore
 
 def extraer_cpcodes(empresa, client_secret, host, access_token, client_token, fechas):
     lista_de_cpcodes_y_edge_bytes = [[],[]]
@@ -31,6 +31,7 @@ def extraer_cpcodes(empresa, client_secret, host, access_token, client_token, fe
         name = specific_cpcode_request.get('cpcodeName')
         lista_de_cpcodes_y_edge_bytes[0].append(name + " (" + cpcode + ")")
         lista_de_cpcodes_y_edge_bytes[1].append(credential.get('edgeBytes'))
+        print(name + " (" + cpcode + ")" + " has Edge Bytes: " + str(round(float(credential.get('edgeBytes'))*si.A,2)).replace("A", "B"))
     # Combine the two lists into a list of tuples
     combined = list(zip(lista_de_cpcodes_y_edge_bytes[0], lista_de_cpcodes_y_edge_bytes[1]))
 

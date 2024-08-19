@@ -34,7 +34,7 @@ def main():
             contador += 1
     else:
         fecha = seleccionar_fecha()
-        reportes_generales()
+        reportes_generales(archivo, fecha)
     print("La generación de reportes ha concluido. Si algún reporte faltase, probablemente tenía el archivo abierto.")
 # Sólamente correrá el programa si se solicita correr directamente.
 if __name__ == "__main__":

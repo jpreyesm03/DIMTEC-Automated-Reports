@@ -94,8 +94,8 @@ def multiples_fechas():
 
 
 def obtener_cpcodes(empresa, client_secret, host, access_token, client_token, fechas):
-    print("""
-          Una de sus selecciones fue 
+    print(f"""
+          Una de sus selecciones para {empresa} fue: 
           '6. Tabla: Hits por tipo de respuesta, de únicamente un CPcode.'
           A continuación, se mostrarán todos los CPcodes disponibles. Si
           desea generar varias tablas (una por CPCODE), favor de ingresar
@@ -148,6 +148,9 @@ def reportes_distintos():
         return False
 
 def reportes_generales(archivo, fecha):
+    empresas = extraer_todas_las_empresas(archivo)
+    for empresa in empresas:
+        return
     return
 
 
@@ -272,21 +275,6 @@ def seleccionar_reportes(empresa="formato general"):
             
     return números_elegidos
 
-def reportes_distintos():
-    print("""
-          Previamente seleccionó que prefiere crear un formato de reporte en lugar
-          de usar el formato predefinido. ¿Desea que todos los reportes sigan el mismo
-          nuevo formato?
-          
-          1. Quiero que todos los reportes usen el mismo nuevo formato.
-          2. Quiero generar reportes distintos para cada empresa.
-          """)
-    answer = int_checker("Seleccione una opción (número): ", [1,2])
-    print("")
-    if (answer == 2):
-        return True
-    else:
-        return False
 
 
 if __name__ == "__main__":
