@@ -7,7 +7,7 @@ def hits_tipo_de_respuesta():
     return
 
 def grafica_origen_por_segundo_y_tipo_de_respuesta(archivo, fecha):
-    
+    return
 
 def main():
     return

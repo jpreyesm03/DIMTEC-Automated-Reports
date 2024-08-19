@@ -78,7 +78,7 @@ for section in config.sections():
     querystring = {
     "start": "2024-07-01T00:00:00Z",
     "end": "2024-08-01T00:00:00Z",
-    "interval": "DAY",
+    "interval": "HOUR",
     "objectIds": "all",
     "metrics": "originHitsPerSecond", # Al menos una métrica es necesaria...
     "filters": "ca=cacheable",
@@ -91,72 +91,75 @@ for section in config.sections():
     mes = find_month(querystring.get("start"))
     response_json = result.json()
     print(f"Response JSON: {json.dumps(response_json, indent=2)}")
-    break
-    # data = response_json.get('data', [])
-    # summary_stats = response_json.get('summaryStatistics', [])
-    # length = len(data)
-    # values_dictionary = {
-    #     "bytesOffload" : [],
-    #     "edgeBitsPerSecond" : [],
-    #     "midgressBitsPerSecond" : [],
-    #     "originBitsPerSecond" : []
-    # }
-    # for value in data:
-    #     values_dictionary["bytesOffload"].append(int(float(value.get('bytesOffload'))))
-    #     values_dictionary["edgeBitsPerSecond"].append(int(float(value.get('edgeBitsPerSecond'))))
-    #     values_dictionary["midgressBitsPerSecond"].append(int(float(value.get('midgressBitsPerSecond'))))
-    #     values_dictionary["originBitsPerSecond"].append(int(float(value.get('originBitsPerSecond'))))
+    data = response_json.get('data', [])
+    length = len(data)
+    values_dictionary = {
+        "0xx" : [],
+        "1xx" : [],
+        "2xx" : [],
+        "3xx" : [],
+        "4xx" : [],
+        "5xx" : []
+    }
+    for dict in data:
+        mini_list = dict.get("data")
+        for mini_dict in mini_list:
+            # print("At " + dict.get("startdatetime") + ", the response class " + mini_dict.get("response_class") + ": " + mini_dict.get("originHitsPerSecond"))
+            values_dictionary[str(mini_dict.get("response_class"))].append(int(float(mini_dict.get('originHitsPerSecond'))))
+            #     values_dictionary["1xx"].append(0)
+            #     values_dictionary["2xx"].append(int(float(mini_dict.get('originHitsPerSecond'))))
+            #     values_dictionary["3xx"].append(int(float(mini_dict.get('originHitsPerSecond'))))
+            #     values_dictionary["4xx"].append(int(float(mini_dict.get('originHitsPerSecond'))))
+            #     values_dictionary["5xx"].append(int(float(mini_dict.get('originHitsPerSecond'))))
+            # else:
+            #     values_dictionary["0xx"].append(int(float(mini_dict.get('originHitsPerSecond'))))
+            #     values_dictionary["1xx"].append(int(float(mini_dict.get('originHitsPerSecond'))))
+            #     values_dictionary["2xx"].append(int(float(mini_dict.get('originHitsPerSecond'))))
+            #     values_dictionary["3xx"].append(int(float(mini_dict.get('originHitsPerSecond'))))
+            #     values_dictionary["4xx"].append(int(float(mini_dict.get('originHitsPerSecond'))))
+            #     values_dictionary["5xx"].append(int(float(mini_dict.get('originHitsPerSecond'))))
+    if not values_dictionary["1xx"]:
+        values_dictionary["1xx"] = [0] * length                
+    dates = np.linspace(1, length, length)  # Days of the month, create from 1 to length, length values.
+    response_0xx = np.array(values_dictionary["0xx"])  
+    response_1xx = np.array(values_dictionary["1xx"])  
+    response_2xx = np.array(values_dictionary["2xx"])  
+    response_3xx = np.array(values_dictionary["3xx"])  
+    response_4xx = np.array(values_dictionary["4xx"])  
+    response_5xx = np.array(values_dictionary["5xx"]) 
+
+
+
+    fig, ax1 = plt.subplots(figsize=(14, 6))
+    plt.subplots_adjust(left=0.09, right=0.87, top=0.9, bottom=0.1)
+    # Error responses on the y-axis
+    line1, = ax1.plot(dates, response_0xx, label='0xx', color='orange')
+    line2, = ax1.plot(dates, response_1xx, label='1xx', color='blue')
+    line3, = ax1.plot(dates, response_2xx, label='2xx', color='green')
+    line1, = ax1.plot(dates, response_3xx, label='3xx', color='cyan')
+    line2, = ax1.plot(dates, response_4xx, label='4xx', color='pink')
+    line3, = ax1.plot(dates, response_5xx, label='5xx', color='red')
+    ax1.set_ylabel('Hits/sec')
+    ax1.legend(loc='upper left', bbox_to_anchor=(1.01, 1), borderaxespad=0.)
     
-    # dates = np.linspace(1, length, length)  # Days of the month
-    # edgeBitsPerSecond = np.array(values_dictionary["edgeBitsPerSecond"])  # Replace with actual edge data
-    # midgressBitsPerSecond = np.array(values_dictionary["midgressBitsPerSecond"])  # Replace with actual midgress data
-    # originBitsPerSecond = np.array(values_dictionary["originBitsPerSecond"])  # Replace with actual origin data
-    # bytesOffload = np.array(values_dictionary["bytesOffload"])  # Replace with actual offload data
+    # Add title and grid
+    plt.title(f'{section}: Origin hits/sec by response class')
+    ax1.grid(True)
+
+    tick_positions = np.arange(1, length, 2*24)  # Custom positions for ticks (every 2 days)
+    tick_labels = [f'Jul {1 + (i * 2)}' for i in range(len(tick_positions))]
     
-    # fig, ax1 = plt.subplots(figsize=(14, 6))
-    # plt.subplots_adjust(left=0.09, right=0.87, top=0.9, bottom=0.1)
-    # # Plot Edge, Midgress, and Origin on the left y-axis
-    # line1, = ax1.plot(dates, edgeBitsPerSecond, label='Edge', color='green')
-    # line2, = ax1.plot(dates, midgressBitsPerSecond, label='Midgress', color='purple')
-    # line3, = ax1.plot(dates, originBitsPerSecond, label='Origin', color='orange')
-    # ax1.set_ylabel('Bits/sec')
-    # # ax1.legend(loc='upper left', bbox_to_anchor=(1.05, 1), borderaxespad=0.1)
+    ax1.set_xlim(min(dates), max(dates))
+    ax1.set_ylim(bottom=0)
+    ax1.set_xticks(tick_positions)
+    ax1.set_xticklabels(tick_labels, rotation=0)  # Rotate for readability
+    ax1.spines['bottom'].set_color('none')  # Remove the bottom border
+
+    ax1.yaxis.set_major_formatter(FuncFormatter(lambda x, pos: f'{int(x)}.00'))
+
+    # Show the plot
+    plt.show()
+    print("\n"*4 + "-"*10 + section + "-"*10 + "\n"*4)
     
-    
-
-    # # Create a second y-axis for Offload
-    # ax2 = ax1.twinx()
-    # line4, = ax2.plot(dates, bytesOffload, label='Offload', color='blue')
-    # ax2.set_ylabel('Offload', labelpad=0)
-    # ax2.set_ylim(0, 100)
-    # # ax2.legend(loc='upper left', bbox_to_anchor=(1.05, 1), borderaxespad=0.1)
-
-    # # Add title and grid
-    # plt.title(f'{section}: Edge, Midgress, and Origin bits/sec with Offload')
-    # ax1.grid(True)
-
-    # # Combine legends from both y-axes
-    # lines = [line4, line1, line2, line3]
-    # labels = [line4.get_label(), line1.get_label(), line2.get_label(), line3.get_label()]
-
-    # # Display the combined legend
-    # fig.legend(lines, labels, loc='upper left', bbox_to_anchor=(0.9, 0.9), borderaxespad=1.2)
-
-    # tick_positions = np.arange(1, length, 2*24)  # Custom positions for ticks (every 5 days)
-    # tick_labels = [f'Jul 1' if t == 1 else f'Jul {int(t//24)}' for t in tick_positions]  # Custom labels
-    
-    # ax1.set_xlim(min(dates), max(dates))
-    # ax1.set_ylim(bottom=0)
-    # ax1.set_xticks(tick_positions)
-    # ax1.set_xticklabels(tick_labels, rotation=0)  # Rotate for readability
-    # ax1.spines['bottom'].set_color('none')  # Remove the right border
-    # ax2.spines['bottom'].set_color('none')  # Remove the right border
-
-    # ax1.yaxis.set_major_formatter(FuncFormatter(lambda x, pos: f'{str(round(int(x)*si.A,2)).replace("A", "B")}/s'))
-    # ax2.yaxis.set_major_formatter(FuncFormatter(lambda x, pos: f'{int(x)}%'))
-
-    # # Show the plot
-    # plt.show()
-    # print("\n"*4 + "-"*10 + section + "-"*10 + "\n"*4)
     
     

@@ -141,7 +141,7 @@ for section in config.sections():
     # Display the combined legend
     fig.legend(lines, labels, loc='upper left', bbox_to_anchor=(0.9, 0.9), borderaxespad=1.2)
 
-    tick_positions = np.arange(1, length, 2*24)  # Custom positions for ticks (every 5 days)
+    tick_positions = np.arange(1, length, 2*24)  # Custom positions for ticks (every 2 days)
     tick_labels = [f'Jul 1' if t == 1 else f'Jul {int(t//24)}' for t in tick_positions]  # Custom labels
     
     ax1.set_xlim(min(dates), max(dates))
