@@ -76,7 +76,7 @@ for section in config.sections():
     "start": "2024-06-01T06:00:00Z",
     "end": "2024-07-01T06:00:00Z",
     "objectIds": "all",
-    "metrics": "bytesOffload, edgeBytes, midgressBytes, originBytes", # Al menos una métrica es necesaria...
+    "metrics": "bytesOffload, edgeBytes, midgressBytes, originBytes", 
     "filters": "ca=cacheable",
     }
     mes = find_month(querystring.get("start"))

@@ -42,15 +42,15 @@ def fechas_formato_ISO_8601(lista_inicial, lista_final):
 
 
 def generar_reportes(empresa, client_secret, host, access_token, client_token, fechas, listas_de_reportes):
-    crear_folder(empresa, fechas[0], fechas[1])
-    crear_folder(empresa, fechas[0], fechas[1])
+    crear_folder(empresa, fechas)
+    crear_folder(empresa, fechas)
     funciones_disponibles = [tabla_de_trafico_por_cpcode, tabla_trafico_total_y_estadisticas, grafica_trafico_por_dia, grafica_hits_al_origen_por_tipo_de_respuesta, tabla_hits_por_tipo, tabla_hits_por_tipo, hits_por_url]
     for index in listas_de_reportes:
         if (index == 6):
             cpcodes = obtener_cpcodes(empresa, client_secret, host, access_token, client_token, fechas)
-            for cpcode in cpcodes:
-                print(cpcode)
-                funciones_disponibles[index-1](empresa, client_secret, host, access_token, client_token, fechas, lista_de_cpcodes = cpcode)
+            for cpc in cpcodes:
+                print(cpc)
+                funciones_disponibles[index-1](empresa, client_secret, host, access_token, client_token, fechas, cpcode = cpc)
             continue
         funciones_disponibles[index-1](empresa, client_secret, host, access_token, client_token, fechas)
     return
@@ -160,9 +160,24 @@ def reportes_distintos():
 
 def reportes_generales(archivo, fechas):
     empresas = obtener_credenciales(archivo, extraer_todas_las_empresas(archivo))
+    
     for empresa, credenciales in empresas.items():
         crear_folder(empresa, fechas)
+        cpcodes = extraer_cpcodes(empresa, credenciales[0], credenciales[1], credenciales[2], credenciales[3], fechas)
         tabla_de_trafico_por_cpcode(empresa, credenciales[0], credenciales[1], credenciales[2], credenciales[3], fechas)
+        tabla_trafico_total_y_estadisticas(empresa, credenciales[0], credenciales[1], credenciales[2], credenciales[3], fechas)
+        grafica_trafico_por_dia(empresa, credenciales[0], credenciales[1], credenciales[2], credenciales[3], fechas)
+        grafica_hits_al_origen_por_tipo_de_respuesta(empresa, credenciales[0], credenciales[1], credenciales[2], credenciales[3], fechas)
+        tabla_hits_por_tipo(empresa, credenciales[0], credenciales[1], credenciales[2], credenciales[3], fechas)
+        try:
+            for i in range(i, len(cpcodes)):
+                if (i < 3):
+                    tabla_hits_por_tipo(empresa, credenciales[0], credenciales[1], credenciales[2], credenciales[3], fechas, cpcodes[i].split()[-1].strip('()'))
+                else:
+                    break
+        except:
+            print("No se detectaron cpcodes. ¿Está seguro que las credenciales de las APIs están vigentes?")
+        hits_por_url(empresa, credenciales[0], credenciales[1], credenciales[2], credenciales[3], fechas)
         return
     return
 

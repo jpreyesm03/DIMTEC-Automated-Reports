@@ -46,7 +46,7 @@ def grafica_trafico_por_dia(empresa, client_secret, host, access_token, client_t
 def grafica_hits_al_origen_por_tipo_de_respuesta(empresa, client_secret, host, access_token, client_token, fechas):
     return
 
-def tabla_hits_por_tipo(empresa, client_secret, host, access_token, client_token, fechas, lista_de_cpcodes = "all"):
+def tabla_hits_por_tipo(empresa, client_secret, host, access_token, client_token, fechas, cpcode = "all"):
     return
 
 def hits_por_url(empresa, client_secret, host, access_token, client_token, fechas):
