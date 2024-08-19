@@ -142,7 +142,7 @@ for section in config.sections():
     fig.legend(lines, labels, loc='upper left', bbox_to_anchor=(0.9, 0.9), borderaxespad=1.2)
 
     tick_positions = np.arange(1, length, 2*24)  # Custom positions for ticks (every 2 days)
-    tick_labels = [f'Jul 1' if t == 1 else f'Jul {int(t//24)}' for t in tick_positions]  # Custom labels
+    tick_labels = [f'Jul {1 + (i * 2)}' for i in range(len(tick_positions))]
     
     ax1.set_xlim(min(dates), max(dates))
     ax1.set_ylim(bottom=0)

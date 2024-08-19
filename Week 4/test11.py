@@ -105,7 +105,7 @@ for section in config.sections():
         mini_list = dict.get("data")
         for mini_dict in mini_list:
             # print("At " + dict.get("startdatetime") + ", the response class " + mini_dict.get("response_class") + ": " + mini_dict.get("originHitsPerSecond"))
-            values_dictionary[str(mini_dict.get("response_class"))].append(int(float(mini_dict.get('originHitsPerSecond'))))
+            values_dictionary[str(mini_dict.get("response_class"))].append(round(float(mini_dict.get('originHitsPerSecond')),4))
             #     values_dictionary["1xx"].append(0)
             #     values_dictionary["2xx"].append(int(float(mini_dict.get('originHitsPerSecond'))))
             #     values_dictionary["3xx"].append(int(float(mini_dict.get('originHitsPerSecond'))))
