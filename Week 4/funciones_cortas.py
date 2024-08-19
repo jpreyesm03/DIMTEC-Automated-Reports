@@ -43,6 +43,7 @@ def fechas_formato_ISO_8601(lista_inicial, lista_final):
 
 def generar_reportes(empresa, client_secret, host, access_token, client_token, fechas, listas_de_reportes):
     crear_folder(empresa, fechas[0], fechas[1])
+    crear_folder(empresa, fechas[0], fechas[1])
     funciones_disponibles = [tabla_de_trafico_por_cpcode, tabla_trafico_total_y_estadisticas, grafica_trafico_por_dia, grafica_hits_al_origen_por_tipo_de_respuesta, tabla_hits_por_tipo, tabla_hits_por_tipo, hits_por_url]
     for index in listas_de_reportes:
         if (index == 6):
@@ -119,6 +120,7 @@ def obtener_cpcodes(empresa, client_secret, host, access_token, client_token, fe
         elif (cpcodes_list[eleccion-1].split()[-1].strip('()') in mis_cpcodes):
             print("Ya seleccionó ese número anteriormente.")
             time.sleep(1)
+            time.sleep(1)
         else:
             mis_cpcodes.append(cpcodes_list[eleccion-1].split()[-1].strip('()'))
         imprimir_empresas_o_cpcodes(cpcodes_list, first_time = False, cpcodes=True)
@@ -193,6 +195,8 @@ def seleccionar_empresas(archivo):
     if eleccion == 0:
         print_next("Ha seleccionado todas las empresas.")
         return obtener_credenciales(archivo, empresas)
+        print_next("Ha seleccionado todas las empresas.")
+        return obtener_credenciales(archivo, empresas)
     else:
         first_time = False
         while (eleccion != -1 and len(empresas_escogidas) < len(empresas)):
@@ -200,8 +204,11 @@ def seleccionar_empresas(archivo):
             if eleccion == 0:
                 print_next("Ha seleccionado todas las empresas.")
                 return obtener_credenciales(archivo, empresas)
+                print_next("Ha seleccionado todas las empresas.")
+                return obtener_credenciales(archivo, empresas)
             elif empresas[eleccion - 1] in empresas_escogidas:
                 print("Ya habías elegido ese número anteriormente.")
+                time.sleep(1)
                 time.sleep(1)
             else:
                 empresas_escogidas.append(empresas[eleccion - 1])
@@ -209,7 +216,9 @@ def seleccionar_empresas(archivo):
             eleccion = int_checker("Escoja qué empresa le interesa (número): ", [-1, len(empresas)])
 
     if (len(empresas_escogidas) == len(empresas)):
+    if (len(empresas_escogidas) == len(empresas)):
         print_next("Ha seleccionado todas las empresas.")
+        return obtener_credenciales(archivo, empresas)
         return obtener_credenciales(archivo, empresas)
     else:
         print("Has seleccionado: ", end="")
@@ -258,6 +267,7 @@ def seleccionar_mes():
     print("")
     mes = int_checker("AKAMAI retiene solo 92 días. Seleccione mes (número): ", [numeros_de_mes_mencionados[0], numeros_de_mes_mencionados[-1]])
     return definir_fecha(meses_nombres[mes - 1])
+    return definir_fecha(meses_nombres[mes - 1])
 
 def seleccionar_reportes(empresa="formato general"):
     print(f"""
@@ -282,6 +292,7 @@ def seleccionar_reportes(empresa="formato general"):
             break
         elif (eleccion in números_elegidos):
             print("Ya seleccionó ese número anteriormente.")
+            time.sleep(1)
             time.sleep(1)
         else:
             números_elegidos.append(eleccion)
