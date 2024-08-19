@@ -5,7 +5,7 @@ from urllib.parse import urljoin
 import forallpeople as si # type: ignore
 
 def extraer_cpcodes(empresa, client_secret, host, access_token, client_token, fechas):
-    lista_de_cpcodes_y_edge_bytes = [[],[]]
+    lista_de_cpcodes = []
     baseurl = 'https://' + host + '/'
     s = requests.Session()
     s.auth = EdgeGridAuth(
@@ -29,22 +29,8 @@ def extraer_cpcodes(empresa, client_secret, host, access_token, client_token, fe
         cpcode = credential.get('cpcode')
         specific_cpcode_request = s.get(urljoin(baseurl, '/cprg/v1/cpcodes/'+cpcode)).json()
         name = specific_cpcode_request.get('cpcodeName')
-        lista_de_cpcodes_y_edge_bytes[0].append(name + " (" + cpcode + ")")
-        lista_de_cpcodes_y_edge_bytes[1].append(credential.get('edgeBytes'))
-        print(name + " (" + cpcode + ")" + " has Edge Bytes: " + str(round(float(credential.get('edgeBytes'))*si.A,2)).replace("A", "B"))
-    # Combine the two lists into a list of tuples
-    combined = list(zip(lista_de_cpcodes_y_edge_bytes[0], lista_de_cpcodes_y_edge_bytes[1]))
-
-    # Sort the combined list based on the second element of each tuple in descending order
-    sorted_combined = sorted(combined, key=lambda x: x[1], reverse=True)
-
-    # Unzip the sorted list back into two lists
-    sorted_names, sorted_values = zip(*sorted_combined)
-
-    # Convert back to list
-    sorted_names = list(sorted_names)
-
-    return sorted_names
+        lista_de_cpcodes.append(name + " (" + cpcode + ")")
+    return lista_de_cpcodes
 
 
 
