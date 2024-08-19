@@ -106,20 +106,11 @@ for section in config.sections():
         for mini_dict in mini_list:
             # print("At " + dict.get("startdatetime") + ", the response class " + mini_dict.get("response_class") + ": " + mini_dict.get("originHitsPerSecond"))
             values_dictionary[str(mini_dict.get("response_class"))].append(round(float(mini_dict.get('originHitsPerSecond')),4))
-            #     values_dictionary["1xx"].append(0)
-            #     values_dictionary["2xx"].append(int(float(mini_dict.get('originHitsPerSecond'))))
-            #     values_dictionary["3xx"].append(int(float(mini_dict.get('originHitsPerSecond'))))
-            #     values_dictionary["4xx"].append(int(float(mini_dict.get('originHitsPerSecond'))))
-            #     values_dictionary["5xx"].append(int(float(mini_dict.get('originHitsPerSecond'))))
-            # else:
-            #     values_dictionary["0xx"].append(int(float(mini_dict.get('originHitsPerSecond'))))
-            #     values_dictionary["1xx"].append(int(float(mini_dict.get('originHitsPerSecond'))))
-            #     values_dictionary["2xx"].append(int(float(mini_dict.get('originHitsPerSecond'))))
-            #     values_dictionary["3xx"].append(int(float(mini_dict.get('originHitsPerSecond'))))
-            #     values_dictionary["4xx"].append(int(float(mini_dict.get('originHitsPerSecond'))))
-            #     values_dictionary["5xx"].append(int(float(mini_dict.get('originHitsPerSecond'))))
+    
     if not values_dictionary["1xx"]:
-        values_dictionary["1xx"] = [0] * length                
+        values_dictionary["1xx"] = [0] * length  
+        
+                      
     dates = np.linspace(1, length, length)  # Days of the month, create from 1 to length, length values.
     response_0xx = np.array(values_dictionary["0xx"])  
     response_1xx = np.array(values_dictionary["1xx"])  
