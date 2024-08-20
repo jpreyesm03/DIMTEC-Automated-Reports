@@ -147,14 +147,66 @@ def grafica_hits_al_origen_por_tipo_de_respuesta(empresa, client_secret, host, a
     return
 
 def tabla_hits_por_tipo(empresa, client_secret, host, access_token, client_token, fechas, subcarpeta_path, cpcode = "all"):
+    
+    def pretty_printer(row):
+        new_row = [row[0]]
+        for value in row[1:]:
+            if isinstance(value, int):
+                new_row.append(f"{value:,}")
+            elif isinstance(value, float):
+                if (str(value)[0] == '0' and str(value)[2:4] == "00"):
+                    new_row.append(f"{value:.7f} %")
+                else:
+                    new_row.append(f"{value:.2f} %")
+            else:
+                new_row.append(value)
+        return new_row
+
+    def sort_file(file, column):
+        df = pd.read_csv(file)
+        sorted_df = df.sort_values(by=column, ascending=False)
+        new_rows = [pretty_printer(row) for row in sorted_df.values]
+        final_df = pd.DataFrame(new_rows, columns=sorted_df.columns)
+        final_df.to_csv(file, index=False)
+    
     if (cpcode == "all"):
         nombre_de_archivo = f"tabla_hits_por_tipo_{empresa}.csv"
+        columnaCSV = 'Tipo de Respuesta'
     else:
         nombre_de_archivo = f"tabla_hits_por_tipo_{empresa}_{cpcode}.csv"
+        columnaCSV = f"Tipo de Respuesta ({cpcode})"
+    baseurl = 'https://' + host + '/'  # this is the "host" value from your credentials file
+    s = requests.Session()
+    s.auth = EdgeGridAuth(
+        client_token=client_token,
+        client_secret=client_secret,
+        access_token=access_token
+    )
+    version = "1"
+    name = "traffic-by-responseclass"
+    path = '/reporting-api/v1/reports/{}/versions/{}/report-data'.format(name, version)
+    querystring = {
+            "start": fechas[0],
+            "end": fechas[1],
+            "objectIds": cpcode,
+            "metrics": "",
+            "filters": "ca=cacheable",
+            }
+    result = s.get(urljoin(baseurl, path), params=querystring)
+    print(f"Configuración (Tabla hits por tipo de respuesta): {empresa}")
+    print(f"HTTPS clase de respuesta (Tabla hits por tipo de respuesta): {result.status_code}")
+    response_json = result.json()
+    data = response_json.get('data')
+    csv_ubicacion = os.path.join(subcarpeta_path, nombre_de_archivo)
+    with open(csv_ubicacion, mode='w', newline='') as file:
+        writer = csv.writer(file)
+        header = [columnaCSV, 'Edge Hits', 'Edge Hits %', 'Origin Hits', 'Origin Hits %']
+        writer.writerow(header)
+        for tipo_de_respuesta in data:
+            if tipo_de_respuesta:
+                writer.writerow([tipo_de_respuesta.get("response_class"), tipo_de_respuesta.get('edgeHits'), tipo_de_respuesta.get('edgeHitsPercent'), tipo_de_respuesta.get('originHits'), tipo_de_respuesta.get('originHitsPercent')])     
     
-
-
-    
+    sort_file(csv_ubicacion, "Edge Hits")
     return f"--{nombre_de_archivo} creado--"
 
 def tabla_hits_por_url(empresa, client_secret, host, access_token, client_token, fechas, subcarpeta_path):
