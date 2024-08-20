@@ -37,6 +37,7 @@ def sort_file(file, column):
     sorted_df = df.sort_values(by=column, ascending=False)
     new_rows = [pretty_printer(row) for row in sorted_df.values]
     final_df = pd.DataFrame(new_rows, columns=sorted_df.columns)
+    final_df = final_df.head(10)
     final_df.to_csv(file, index=False)
 
 def find_month(text_month):
@@ -70,7 +71,7 @@ def file_closed(file_path):
         print(f"Error: The file '{file_path}' is already open. Please close it before running the script.")
         return False
 
-def main(objectIDs = "all"):
+def main():
     # Parse the .edgerc file
     config = configparser.ConfigParser()
     config.read(r'C:\Users\jprey\OneDrive\Escritorio\JP\DIMTEC\Week 2\El Tiempo\.edgerc')  # replace with the path to your .edgerc file if it's not in the same directory
@@ -78,22 +79,23 @@ def main(objectIDs = "all"):
     # Iterate over each section in the config file
     for section in config.sections():
         querystring = {
-            "start": "2024-06-01T06:00:00Z",
-            "end": "2024-07-01T06:00:00Z",
-            "objectIds": objectIDs,
+            "start": "2024-06-01T00:00:00Z",
+            "end": "2024-07-01T00:00:00Z",
+            "objectIds": "all",
             "metrics": "",
-            "filters": "ca=cacheable",
+            "filters": "",
             }
+        name = "urlhits-by-url"
         mes = find_month(querystring.get("start"))
 
         if (querystring.get("objectIds") not in ["", "all"]):
-            response_class = 'Response Class (' + querystring.get("objectIds") + ")"
+            url_title = 'URL (' + querystring.get("objectIds") + ")"
             report_section = section + "_(" + remove_spaces(querystring.get("objectIds")) + ")"
         else:
-            response_class = 'Response Class'
+            url_title = 'URL'
             report_section = section
 
-        csv_file = f'report_{report_section}_{mes}_traffic-by-response-class.csv'
+        csv_file = f'report_{report_section}_{mes}_{name}.csv'
         if (file_closed(csv_file)):
             client_secret = config[section]['client_secret']
             host = config[section]['host']
@@ -109,26 +111,36 @@ def main(objectIDs = "all"):
                 access_token=access_token
             )
             version = "1"
-            name = "traffic-by-responseclass"
             path = '/reporting-api/v1/reports/{}/versions/{}/report-data'.format(name, version)
+            # print(path)
+            # result = s.get(urljoin(baseurl, '/contract-api/v1/contracts/identifiers'))
+            # result = s.get(urljoin(baseurl, '/cprg/v1/cpcodes'))
             result = s.get(urljoin(baseurl, path), params=querystring)
             print(f"Configuration: {section}")
             print(f"Status Code: {result.status_code}")
+            
             response_json = result.json()
+            # print(f"Response JSON: {json.dumps(response_json, indent=2)}")
             data = response_json.get('data')
-
+            # print(data)
+            # Define the CSV file name
+            
+            
+            
             with open(csv_file, mode='w', newline='') as file:
                 writer = csv.writer(file)
-                header = [response_class, 'Edge Hits', 'Edge Hits %', 'Origin Hits', 'Origin Hits %']
+                header = [url_title, 'Edge Hits', 'Origin Hits', 'Offload']
                 writer.writerow(header)
                 for response in data:
                     if response:
-                        writer.writerow([response.get("response_class"), response.get('edgeHits'), response.get('edgeHitsPercent'), response.get('originHits'), response.get('originHitsPercent')])     
+                        writer.writerow([response.get("hostname.url"), response.get('allEdgeHits'), response.get('allOriginHits'), response.get('allHitsOffload')])     
+                print(f"Data saved to {csv_file}")
+                print("\n"*8 + "-"*15 + report_section + "-"*15 + "\n"*8)
             sort_file(csv_file, "Edge Hits")
             
             
         else:
-            # Handle the case where the file is open!
+            # Handle the case where the file is open
             print("-"*15 + section + "-"*15 + "\n"*8)
     current_file_path = __file__
     file_name = os.path.basename(current_file_path)

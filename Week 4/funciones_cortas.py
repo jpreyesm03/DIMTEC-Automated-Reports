@@ -1,4 +1,4 @@
-from generador_tablas_y_graficas import extraer_cpcodes, tabla_de_trafico_por_cpcode, tabla_trafico_total_y_estadisticas, grafica_trafico_por_dia, grafica_hits_al_origen_por_tipo_de_respuesta, tabla_hits_por_tipo, tabla_hits_por_url  # type: ignore
+from generador_tablas_y_graficas import formatear_fechas, extraer_cpcodes, tabla_de_trafico_por_cpcode, tabla_trafico_total_y_estadisticas, grafica_trafico_por_dia, grafica_hits_al_origen_por_tipo_de_respuesta, tabla_hits_por_tipo, tabla_hits_por_url  # type: ignore
 import tkinter as tk
 from tkinter import filedialog
 import re
@@ -55,7 +55,7 @@ def correr_programa_subproceso(arg1):
     )
     return result.stdout.strip()
 
-def crear_carpeta(nombre_de_empresa = "", carpeta = ""):
+def crear_carpeta(nombre_de_empresa = "", carpeta = "", fechas_para_el_titulo = []):
     dia = str("{:02}".format(datetime.now().day))
     mes = str("{:02}".format(datetime.now().month))
     año = str(datetime.now().year)
@@ -66,12 +66,11 @@ def crear_carpeta(nombre_de_empresa = "", carpeta = ""):
         print_next(f"Carpeta creada: {nombre_carpeta}")
         return nombre_carpeta
     else:
-        return crear_subcarpeta(carpeta, f"Reporte_de_{nombre_de_empresa}_" + dia + "_" + mes + "_" + año)
+        return crear_subcarpeta(carpeta, f"Reporte_de_{nombre_de_empresa}_{formatear_fechas(fechas_para_el_titulo[0], fechas_para_el_titulo[1])}")
 
 def crear_subcarpeta(carpeta_ancestra, nombre_de_subcarpeta_ideal):
     # Get the current working directory
     actual_dir = os.getcwd()
-    
     # Path to the parent folder
     carpeta_ancestra = os.path.join(actual_dir, carpeta_ancestra)
     subcarpeta_path = definir_nombre(nombre_de_subcarpeta_ideal, carpeta_ancestra_path = carpeta_ancestra, subcarpeta = True)
@@ -158,8 +157,11 @@ def fechas_correctas_ISO_8601(fechas, interval = "NONE"):
             fecha_final_modificada = agregar_tiempo(fecha_final_modificada, cambio_tiempo = "1 DIA")
     return [agregar_tiempo(fecha_inicial_modificada, cambio_tiempo = "6 HORAS"), agregar_tiempo(fecha_final_modificada, cambio_tiempo = "6 HORAS")]
 
+
+
+
 def generar_reportes(empresa, client_secret, host, access_token, client_token, fechas, listas_de_reportes, carpeta_creada):
-    subcarpeta_path = crear_carpeta(nombre_de_empresa = empresa, carpeta = carpeta_creada)
+    subcarpeta_path = crear_carpeta(nombre_de_empresa = empresa, carpeta = carpeta_creada, fechas_para_el_titulo = fechas)
     funciones_disponibles = [tabla_de_trafico_por_cpcode, tabla_trafico_total_y_estadisticas, grafica_trafico_por_dia, grafica_hits_al_origen_por_tipo_de_respuesta, tabla_hits_por_tipo, tabla_hits_por_tipo, tabla_hits_por_url]
     print_next(f"Etapa actual: producción de tablas/gráficas. Este proceso suele tardas varios minutos por empresa: {empresa}")
     for index in listas_de_reportes:
@@ -295,7 +297,7 @@ def reportes_generales(archivo, fechas, carpeta_creada):
     contador = 0
     for empresa, credenciales in empresas.items():
         print_next(f"Etapa actual: producción de tablas/gráficas. Este proceso suele tardas varios minutos por empresa: {empresa}")
-        subcarpeta_path = crear_carpeta(nombre_de_empresa = empresa, carpeta = carpeta_creada)
+        subcarpeta_path = crear_carpeta(nombre_de_empresa = empresa, carpeta = carpeta_creada, fechas_para_el_titulo = fechas)
         cpcodes = extraer_cpcodes(empresa, credenciales[0], credenciales[1], credenciales[2], credenciales[3], fechas_correctas_ISO_8601(fechas, interval = "NONE"))
         print(tabla_de_trafico_por_cpcode(empresa, credenciales[0], credenciales[1], credenciales[2], credenciales[3], fechas_correctas_ISO_8601(fechas, interval = "NONE"), subcarpeta_path))
         print(tabla_trafico_total_y_estadisticas(empresa, credenciales[0], credenciales[1], credenciales[2], credenciales[3], fechas_correctas_ISO_8601(fechas, interval = "FIVE_MINUTES"), subcarpeta_path))
