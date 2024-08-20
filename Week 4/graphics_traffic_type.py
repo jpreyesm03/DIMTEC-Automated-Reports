@@ -12,47 +12,6 @@ import numpy as np # type: ignore
 import matplotlib.pyplot as plt # type: ignore
 from matplotlib.ticker import FuncFormatter # type: ignore
     
-
-
-def pretty_printer(final_name, off, ebt, mbt, obt):
-    list_result = [final_name, off]
-    new_ebt = str(round(int(ebt)*si.A,2))
-    new_mbt = str(round(int(mbt)*si.A,2))
-    new_obt = str(round(int(obt)*si.A,2))
-    list_result.append(new_ebt.replace("A", "B"))
-    list_result.append(new_mbt.replace("A", "B"))
-    list_result.append(new_obt.replace("A", "B"))
-    list_result.append(int(ebt))
-    return list_result
-
-def sort_file(file, column):
-    sort_column = column
-    df = pd.read_csv(file)
-    sorted_df = df.sort_values(by=sort_column, ascending=False)
-    sorted_df = sorted_df.drop(columns=[sort_column])
-    sorted_df.to_csv(file, index=False)
-
-def find_month(text_month):
-    # Store the current locale
-    current_locale = locale.getlocale(locale.LC_TIME)
-    
-    try:
-        # Set the locale to Spanish
-        locale.setlocale(locale.LC_TIME, "es_ES.UTF-8")
-        # Parse the date string into a datetime object
-        date_obj = datetime.strptime(text_month, "%Y-%m-%dT%H:%M:%SZ")
-        # Extract the month name in Spanish and convert to lowercase
-        month_name = date_obj.strftime("%B").lower()
-        # Extract the last two digits of the year
-        year = date_obj.strftime("%y")
-        # Combine month name and year
-        month_year = f"{month_name}{year}"
-    finally:
-        # Restore the previous locale
-        locale.setlocale(locale.LC_TIME, current_locale)
-    
-    return month_year
-
 # Parse the .edgerc file
 config = configparser.ConfigParser()
 config.read(r'C:\Users\jprey\OneDrive\Escritorio\JP\DIMTEC\Week 2\El Tiempo\.edgerc')  # replace with the path to your .edgerc file if it's not in the same directory
@@ -80,7 +39,7 @@ for section in config.sections():
     "end": "2024-08-01T00:00:00Z",
     "interval": "HOUR",
     "objectIds": "all",
-    "metrics": "bytesOffload, bytesOffloadAvg, bytesOffloadMax, bytesOffloadMin, edgeBitsPerSecond, edgeBitsPerSecondMax, edgeBitsPerSecondMin, edgeBytesTotal, midgressBitsPerSecond, midgressBitsPerSecondMax, midgressBitsPerSecondMin, midgressBytesTotal, originBitsPerSecond, originBitsPerSecondMax, originBitsPerSecondMin, originBytesTotal", # Al menos una métrica es necesaria...
+    "metrics": "bytesOffload, bytesOffloadMax, bytesOffloadMin, edgeBitsPerSecond, edgeBitsPerSecondMax, edgeBitsPerSecondMin, edgeBytesTotal, midgressBitsPerSecond, midgressBitsPerSecondMax, midgressBitsPerSecondMin, midgressBytesTotal, originBitsPerSecond, originBitsPerSecondMax, originBitsPerSecondMin, originBytesTotal", # Al menos una métrica es necesaria...
     "filters": "ca=cacheable",
     }
     # result = s.get(urljoin(baseurl, '/contract-api/v1/contracts/identifiers'))
@@ -88,7 +47,7 @@ for section in config.sections():
     result = s.get(urljoin(baseurl, path), params=querystring)
     print(f"Configuration: {section}")
     print(f"Status Code: {result.status_code}")
-    mes = find_month(querystring.get("start"))
+
     response_json = result.json()
     # print(f"Response JSON: {json.dumps(response_json, indent=2)}")
     data = response_json.get('data', [])

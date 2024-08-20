@@ -8,6 +8,10 @@ import os
 import pandas as pd # type: ignore
 from datetime import datetime
 import json
+import locale
+import numpy as np # type: ignore
+import matplotlib.pyplot as plt # type: ignore
+from matplotlib.ticker import FuncFormatter # type: ignore
 
 def formatear_fechas(fecha1, fecha2):
     # Diccionario para traducir los meses al español
@@ -157,10 +161,179 @@ def tabla_trafico_total_y_estadisticas(empresa, client_secret, host, access_toke
     return f"--{nombre_de_archivo} creado--"
 
 def grafica_trafico_por_dia(empresa, client_secret, host, access_token, client_token, fechas, subcarpeta_path):
-    return 
+    baseurl = 'https://' + host + '/'  # this is the "host" value from your credentials file
+    s = requests.Session()
+    s.auth = EdgeGridAuth(
+        client_token=client_token,
+        client_secret=client_secret,
+        access_token=access_token
+    )
+    version = "1"
+    name = "bytes-by-time"
+    path = '/reporting-api/v1/reports/{}/versions/{}/report-data'.format(name, version)
+    querystring = {
+    "start": fechas[0],
+    "end": fechas[1],
+    "interval": "HOUR",
+    "objectIds": "all",
+    "metrics": "bytesOffload, edgeBitsPerSecond, midgressBitsPerSecond, originBitsPerSecond", # Al menos una métrica es necesaria...
+    "filters": "ca=cacheable",
+    }
+    result = s.get(urljoin(baseurl, path), params=querystring)
+    print(f"Configuración (Gráfica de tráfico por día): {empresa}")
+    print(f"HTTPS clase de respuesta (Gráfica de tráfico por día): {result.status_code}")
+
+    response_json = result.json()
+    data = response_json.get('data', [])
+    length = len(data)
+    values_dictionary = {
+        "bytesOffload" : [],
+        "edgeBitsPerSecond" : [],
+        "midgressBitsPerSecond" : [],
+        "originBitsPerSecond" : []
+    }
+    for value in data:
+        values_dictionary["bytesOffload"].append(int(float(value.get('bytesOffload'))))
+        values_dictionary["edgeBitsPerSecond"].append(int(float(value.get('edgeBitsPerSecond'))))
+        values_dictionary["midgressBitsPerSecond"].append(int(float(value.get('midgressBitsPerSecond'))))
+        values_dictionary["originBitsPerSecond"].append(int(float(value.get('originBitsPerSecond'))))
+    
+    dates = np.linspace(1, length, length)  # Days of the month
+    edgeBitsPerSecond = np.array(values_dictionary["edgeBitsPerSecond"])  # Replace with actual edge data
+    midgressBitsPerSecond = np.array(values_dictionary["midgressBitsPerSecond"])  # Replace with actual midgress data
+    originBitsPerSecond = np.array(values_dictionary["originBitsPerSecond"])  # Replace with actual origin data
+    bytesOffload = np.array(values_dictionary["bytesOffload"])  # Replace with actual offload data
+    
+    fig, ax1 = plt.subplots(figsize=(14, 6))
+    plt.subplots_adjust(left=0.09, right=0.87, top=0.9, bottom=0.1)
+    # Plot Edge, Midgress, and Origin on the left y-axis
+    line1, = ax1.plot(dates, edgeBitsPerSecond, label='Edge', color='green')
+    line2, = ax1.plot(dates, midgressBitsPerSecond, label='Midgress', color='purple')
+    line3, = ax1.plot(dates, originBitsPerSecond, label='Origin', color='orange')
+    ax1.set_ylabel('Bits/sec')
+    # ax1.legend(loc='upper left', bbox_to_anchor=(1.05, 1), borderaxespad=0.1)
+    
+    # Create a second y-axis for Offload
+    ax2 = ax1.twinx()
+    line4, = ax2.plot(dates, bytesOffload, label='Offload', color='blue')
+    ax2.set_ylabel('Offload', labelpad=0)
+    ax2.set_ylim(0, 100)
+    # ax2.legend(loc='upper left', bbox_to_anchor=(1.05, 1), borderaxespad=0.1)
+
+    # Add title and grid
+    plt.title(f'{empresa}: Edge, Midgress, and Origin bits/sec with Offload')
+    ax1.grid(True)
+
+    # Combine legends from both y-axes
+    lines = [line4, line1, line2, line3]
+    labels = [line4.get_label(), line1.get_label(), line2.get_label(), line3.get_label()]
+
+    # Display the combined legend
+    fig.legend(lines, labels, loc='upper left', bbox_to_anchor=(0.9, 0.9), borderaxespad=1.2)
+
+    tick_positions = np.arange(1, length, 2*24)  # Custom positions for ticks (every 2 days)
+    tick_labels = [f'Jul {1 + (i * 2)}' for i in range(len(tick_positions))]
+    
+    ax1.set_xlim(min(dates), max(dates))
+    ax1.set_ylim(bottom=0)
+    ax1.set_xticks(tick_positions)
+    ax1.set_xticklabels(tick_labels, rotation=0)  # Rotate for readability
+    ax1.spines['bottom'].set_color('none')  # Remove the right border
+    ax2.spines['bottom'].set_color('none')  # Remove the right border
+
+    ax1.yaxis.set_major_formatter(FuncFormatter(lambda x, pos: f'{str(round(int(x)*si.A,2)).replace("A", "B")}/s'))
+    ax2.yaxis.set_major_formatter(FuncFormatter(lambda x, pos: f'{int(x)}%'))
+
+     # Save the figure
+    nombre_de_archivo = f"Grafica_Trafico_Por_Dia_{empresa}_{formatear_fechas(fechas[0], fechas[1])}.png"
+    file_path = os.path.join(subcarpeta_path, nombre_de_archivo)
+    plt.savefig(file_path)
+    plt.close(fig)
+    return f"--{nombre_de_archivo} creado--"
 
 def grafica_hits_al_origen_por_tipo_de_respuesta(empresa, client_secret, host, access_token, client_token, fechas, subcarpeta_path):
-    return
+    baseurl = 'https://' + host + '/'  # this is the "host" value from your credentials file
+    s = requests.Session()
+    s.auth = EdgeGridAuth(
+        client_token=client_token,
+        client_secret=client_secret,
+        access_token=access_token
+    )
+    version = "1"
+    name = "traffic-by-timeandresponseclass"
+    path = '/reporting-api/v1/reports/{}/versions/{}/report-data'.format(name, version)
+    querystring = {
+    "start": fechas[0],
+    "end": fechas[1],
+    "interval": "HOUR",
+    "objectIds": "all",
+    "metrics": "originHitsPerSecond", # Al menos una métrica es necesaria...
+    "filters": "ca=cacheable",
+    }
+    result = s.get(urljoin(baseurl, path), params=querystring)
+    print(f"Configuración (Gráfica de hits al origen por segundo y por tipo de respuesta): {empresa}")
+    print(f"HTTPS clase de respuesta (Gráfica de hits al origen por segundo y por tipo de respuesta): {result.status_code}")
+    response_json = result.json()
+    data = response_json.get('data', [])
+    length = len(data)
+    values_dictionary = {
+        "0xx" : [],
+        "1xx" : [],
+        "2xx" : [],
+        "3xx" : [],
+        "4xx" : [],
+        "5xx" : []
+    }
+    for dict in data:
+        mini_list = dict.get("data")
+        for mini_dict in mini_list:
+            values_dictionary[str(mini_dict.get("response_class"))].append(round(float(mini_dict.get('originHitsPerSecond')),4))
+    
+    if not values_dictionary["1xx"]:
+        values_dictionary["1xx"] = [0] * length  
+        
+                      
+    dates = np.linspace(1, length, length)  # Days of the month, create from 1 to length, length values.
+    response_0xx = np.array(values_dictionary["0xx"])  
+    response_1xx = np.array(values_dictionary["1xx"])  
+    response_2xx = np.array(values_dictionary["2xx"])  
+    response_3xx = np.array(values_dictionary["3xx"])  
+    response_4xx = np.array(values_dictionary["4xx"])  
+    response_5xx = np.array(values_dictionary["5xx"]) 
+
+    fig, ax1 = plt.subplots(figsize=(14, 6))
+    plt.subplots_adjust(left=0.09, right=0.87, top=0.9, bottom=0.1)
+    # Error responses on the y-axis
+    line1, = ax1.plot(dates, response_0xx, label='0xx', color='orange')
+    line2, = ax1.plot(dates, response_1xx, label='1xx', color='blue')
+    line3, = ax1.plot(dates, response_2xx, label='2xx', color='green')
+    line1, = ax1.plot(dates, response_3xx, label='3xx', color='cyan')
+    line2, = ax1.plot(dates, response_4xx, label='4xx', color='pink')
+    line3, = ax1.plot(dates, response_5xx, label='5xx', color='red')
+    ax1.set_ylabel('Hits/sec')
+    ax1.legend(loc='upper left', bbox_to_anchor=(1.01, 1), borderaxespad=0.)
+    
+    # Add title and grid
+    plt.title(f'{empresa}: Origin hits/sec by response class')
+    ax1.grid(True)
+
+    tick_positions = np.arange(1, length, 2*24)  # Custom positions for ticks (every 2 days)
+    tick_labels = [f'Jul {1 + (i * 2)}' for i in range(len(tick_positions))]
+    
+    ax1.set_xlim(min(dates), max(dates))
+    ax1.set_ylim(bottom=0)
+    ax1.set_xticks(tick_positions)
+    ax1.set_xticklabels(tick_labels, rotation=0)  # Rotate for readability
+    ax1.spines['bottom'].set_color('none')  # Remove the bottom border
+
+    ax1.yaxis.set_major_formatter(FuncFormatter(lambda x, pos: f'{int(x)}.00')) 
+
+    nombre_de_archivo = f"Grafica_de_Hits_al_Origen_al_Tipo_de_respuesta_{empresa}_{formatear_fechas(fechas[0], fechas[1])}.png"
+    file_path = os.path.join(subcarpeta_path, nombre_de_archivo)
+    plt.savefig(file_path)
+    plt.close(fig)
+
+    return f"--{nombre_de_archivo} creado--"
 
 def tabla_hits_por_tipo(empresa, client_secret, host, access_token, client_token, fechas, subcarpeta_path, cpcode = "all"):
     
@@ -248,16 +421,6 @@ def tabla_hits_por_url(empresa, client_secret, host, access_token, client_token,
         final_df = final_df.head(10)
         final_df.to_csv(file, index=False)
     
-    print(f"Empresa: {empresa}")
-    print(f"Client Secret: {client_secret}")
-    print(f"Host: {host}")
-    print(f"Access Token: {access_token}")
-    print(f"Client Token: {client_token}")
-    print(f"Fecha inicial: {fechas[0]}")
-    print(f"Fecha final: {fechas[1]}")
-    print(f"Subcarpeta: {subcarpeta_path}")
-
-
     baseurl = 'https://' + host + '/'  # this is the "host" value from your credentials file
     s = requests.Session()
     s.auth = EdgeGridAuth(
@@ -298,6 +461,4 @@ def main():
     return
 
 if __name__ == "__main__":
-    file_path = r"C:\Users\jprey\OneDrive\Escritorio\JP\DIMTEC\Week 4\Reportes_por_Empresa_20_08_2024[17]\Reporte_de_eltiempo_12Jun24-05Jul24"
-    tabla_hits_por_url("eltiempo", "ywILUu15mgi77NoDP/jwYQ+V0WN4l7OJKyrnQlcrYS4=", "akab-prsecj6xfjiyu53m-s4yf4arinrkdj2bj.luna.akamaiapis.net", "akab-nhx72hdajghp4bt5-sr5v6hirwta4lb3p",  "akab-wlno2a5rlzf2ykl5-4qx3tjtupr5nkj25", ["2024-06-01T00:00:00Z", "2024-07-01T00:00:00Z"], file_path)
     main()

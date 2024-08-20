@@ -3,148 +3,105 @@ import requests # type: ignore
 from akamai.edgegrid import EdgeGridAuth # type: ignore
 from urllib.parse import urljoin
 import csv
-# import forallpeople as si # type: ignore
+import forallpeople as si # type: ignore
 import pandas as pd # type: ignore
 import json
 from datetime import datetime
 import locale
-import os
-
-def remove_spaces(text):
-    new_text = ""
-    for character in text:
-        if character != ' ':
-            new_text += character
-    return new_text
-
-
-def pretty_printer(row):
-    new_row = [row[0]]
-    for value in row[1:]:
-        if isinstance(value, int):
-            new_row.append(f"{value:,}")
-        elif isinstance(value, float):
-            if (str(value)[0] == '0' and str(value)[2:4] == "00"):
-                new_row.append(f"{value:.7f} %")
-            else:
-                new_row.append(f"{value:.2f} %")
-        else:
-            new_row.append(value)
-    return new_row
-
-def sort_file(file, column):
-    df = pd.read_csv(file)
-    sorted_df = df.sort_values(by=column, ascending=False)
-    new_rows = [pretty_printer(row) for row in sorted_df.values]
-    final_df = pd.DataFrame(new_rows, columns=sorted_df.columns)
-    final_df = final_df.head(10)
-    final_df.to_csv(file, index=False)
-
-def find_month(text_month):
-    # Store the current locale
-    current_locale = locale.getlocale(locale.LC_TIME)
+import numpy as np # type: ignore
+import matplotlib.pyplot as plt # type: ignore
+from matplotlib.ticker import FuncFormatter # type: ignore
     
-    try:
-        # Set the locale to Spanish
-        locale.setlocale(locale.LC_TIME, "es_ES.UTF-8")
-        # Parse the date string into a datetime object
-        date_obj = datetime.strptime(text_month, "%Y-%m-%dT%H:%M:%SZ")
-        # Extract the month name in Spanish and convert to lowercase
-        month_name = date_obj.strftime("%B").lower()
-        # Extract the last two digits of the year
-        year = date_obj.strftime("%y")
-        # Combine month name and year
-        month_year = f"{month_name}{year}"
-    finally:
-        # Restore the previous locale
-        locale.setlocale(locale.LC_TIME, current_locale)
+
+
+
+# Iterate over each section in the config file
+for section in config.sections():
+    client_secret = config[section]['client_secret']
+    host = config[section]['host']
+    access_token = config[section]['access_token']
+    client_token = config[section]['client_token']
     
-    return month_year
 
-def file_closed(file_path):
-    try:
-        # Try opening the file in write mode
-        with open(file_path, mode='a', newline='') as file:
-            pass  # If successful, the file is not open elsewhere
-        return True
-    except PermissionError:
-        print(f"Error: The file '{file_path}' is already open. Please close it before running the script.")
-        return False
+    baseurl = 'https://' + host + '/'  # this is the "host" value from your credentials file
+    s = requests.Session()
+    s.auth = EdgeGridAuth(
+        client_token=client_token,
+        client_secret=client_secret,
+        access_token=access_token
+    )
+    version = "1"
+    name = "traffic-by-timeandresponseclass"
+    path = '/reporting-api/v1/reports/{}/versions/{}/report-data'.format(name, version)
+    querystring = {
+    "start": "2024-05-23T05:00:00Z",
+    "end": "2024-08-18T03:00:00Z",
+    "interval": "HOUR",
+    "objectIds": "all",
+    "metrics": "originHitsPerSecond", # Al menos una métrica es necesaria...
+    "filters": "ca=cacheable",
+    }
+    result = s.get(urljoin(baseurl, path), params=querystring)
+    print(f"Configuration: {section}")
+    print(f"Status Code: {result.status_code}")
+    response_json = result.json()
+    data = response_json.get('data', [])
+    length = len(data)
+    values_dictionary = {
+        "0xx" : [],
+        "1xx" : [],
+        "2xx" : [],
+        "3xx" : [],
+        "4xx" : [],
+        "5xx" : []
+    }
+    for dict in data:
+        mini_list = dict.get("data")
+        for mini_dict in mini_list:
+            values_dictionary[str(mini_dict.get("response_class"))].append(round(float(mini_dict.get('originHitsPerSecond')),4))
+    
+    if not values_dictionary["1xx"]:
+        values_dictionary["1xx"] = [0] * length  
+        
+                      
+    dates = np.linspace(1, length, length)  # Days of the month, create from 1 to length, length values.
+    response_0xx = np.array(values_dictionary["0xx"])  
+    response_1xx = np.array(values_dictionary["1xx"])  
+    response_2xx = np.array(values_dictionary["2xx"])  
+    response_3xx = np.array(values_dictionary["3xx"])  
+    response_4xx = np.array(values_dictionary["4xx"])  
+    response_5xx = np.array(values_dictionary["5xx"]) 
 
-def main():
-    # Parse the .edgerc file
-    config = configparser.ConfigParser()
-    config.read(r'C:\Users\jprey\OneDrive\Escritorio\JP\DIMTEC\Week 2\El Tiempo\.edgerc')  # replace with the path to your .edgerc file if it's not in the same directory
+    fig, ax1 = plt.subplots(figsize=(14, 6))
+    plt.subplots_adjust(left=0.09, right=0.87, top=0.9, bottom=0.1)
+    # Error responses on the y-axis
+    line1, = ax1.plot(dates, response_0xx, label='0xx', color='orange')
+    line2, = ax1.plot(dates, response_1xx, label='1xx', color='blue')
+    line3, = ax1.plot(dates, response_2xx, label='2xx', color='green')
+    line1, = ax1.plot(dates, response_3xx, label='3xx', color='cyan')
+    line2, = ax1.plot(dates, response_4xx, label='4xx', color='pink')
+    line3, = ax1.plot(dates, response_5xx, label='5xx', color='red')
+    ax1.set_ylabel('Hits/sec')
+    ax1.legend(loc='upper left', bbox_to_anchor=(1.01, 1), borderaxespad=0.)
+    
+    # Add title and grid
+    plt.title(f'{section}: Origin hits/sec by response class')
+    ax1.grid(True)
 
-    # Iterate over each section in the config file
-    for section in config.sections():
-        querystring = {
-            "start": "2024-06-01T00:00:00Z",
-            "end": "2024-07-01T00:00:00Z",
-            "objectIds": "all",
-            "metrics": "",
-            "filters": "",
-            }
-        name = "urlhits-by-url"
-        mes = find_month(querystring.get("start"))
+    tick_positions = np.arange(1, length, 2*24)  # Custom positions for ticks (every 2 days)
+    tick_labels = [f'Jul {1 + (i * 2)}' for i in range(len(tick_positions))]
+    
+    ax1.set_xlim(min(dates), max(dates))
+    ax1.set_ylim(bottom=0)
+    ax1.set_xticks(tick_positions)
+    ax1.set_xticklabels(tick_labels, rotation=0)  # Rotate for readability
+    ax1.spines['bottom'].set_color('none')  # Remove the bottom border
 
-        if (querystring.get("objectIds") not in ["", "all"]):
-            url_title = 'URL (' + querystring.get("objectIds") + ")"
-            report_section = section + "_(" + remove_spaces(querystring.get("objectIds")) + ")"
-        else:
-            url_title = 'URL'
-            report_section = section
+    ax1.yaxis.set_major_formatter(FuncFormatter(lambda x, pos: f'{int(x)}.00'))
 
-        csv_file = f'report_{report_section}_{mes}_{name}.csv'
-        if (file_closed(csv_file)):
-            client_secret = config[section]['client_secret']
-            host = config[section]['host']
-            access_token = config[section]['access_token']
-            client_token = config[section]['client_token']
-            
-
-            baseurl = 'https://' + host + '/'  # this is the "host" value from your credentials file
-            s = requests.Session()
-            s.auth = EdgeGridAuth(
-                client_token=client_token,
-                client_secret=client_secret,
-                access_token=access_token
-            )
-            version = "1"
-            path = '/reporting-api/v1/reports/{}/versions/{}/report-data'.format(name, version)
-            # print(path)
-            # result = s.get(urljoin(baseurl, '/contract-api/v1/contracts/identifiers'))
-            # result = s.get(urljoin(baseurl, '/cprg/v1/cpcodes'))
-            result = s.get(urljoin(baseurl, path), params=querystring)
-            print(f"Configuration: {section}")
-            print(f"Status Code: {result.status_code}")
-            
-            response_json = result.json()
-            # print(f"Response JSON: {json.dumps(response_json, indent=2)}")
-            data = response_json.get('data')
-            # print(data)
-            # Define the CSV file name
-            
-            
-            
-            with open(csv_file, mode='w', newline='') as file:
-                writer = csv.writer(file)
-                header = [url_title, 'Edge Hits', 'Origin Hits', 'Offload']
-                writer.writerow(header)
-                for response in data:
-                    if response:
-                        writer.writerow([response.get("hostname.url"), response.get('allEdgeHits'), response.get('allOriginHits'), response.get('allHitsOffload')])     
-                print(f"Data saved to {csv_file}")
-                print("\n"*8 + "-"*15 + report_section + "-"*15 + "\n"*8)
-            sort_file(csv_file, "Edge Hits")
-            
-            
-        else:
-            # Handle the case where the file is open
-            print("-"*15 + section + "-"*15 + "\n"*8)
-    current_file_path = __file__
-    file_name = os.path.basename(current_file_path)
-    print(f"CSV file(s) created. Located in the same directory than {file_name}.")
-
-if __name__ == "__main__":
-    main()
+    # Show the plot
+    plt.show()
+    print("\n"*4 + "-"*10 + section + "-"*10 + "\n"*4)
+    
+    
+    
