@@ -108,4 +108,4 @@ for section in config.sections():
         print(f"Data saved to {csv_file}")
         print("\n" + "-"*40 + "\n")
     sort_file(csv_file, "sortingColumn")
-    break
+    
