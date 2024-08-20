@@ -26,7 +26,7 @@ def main():
 
         for empresa, credenciales in empresas_y_credenciales.items():
             if (son_multiples_fechas):
-                fechas = seleccionar_fecha()
+                fechas = seleccionar_fecha(texto_empresa = empresa)
             if (son_reportes_distintos):
                 lista_de_reportes = seleccionar_reportes(empresa)
             generar_reportes(empresa, credenciales[0], credenciales[1], credenciales[2], credenciales[3], fechas, lista_de_reportes)

@@ -86,7 +86,7 @@ for section in config.sections():
     print(f"Status Code: {result.status_code}")
     
     response_json = result.json()
-    print(f"Response JSON: {json.dumps(response_json, indent=2)}")
+    # print(f"Response JSON: {json.dumps(response_json, indent=2)}")
     data = response_json.get('data')
     print(data)
     # Define the CSV file name
@@ -108,3 +108,4 @@ for section in config.sections():
         print(f"Data saved to {csv_file}")
         print("\n" + "-"*40 + "\n")
     sort_file(csv_file, "sortingColumn")
+    break

@@ -49,23 +49,20 @@ def generar_reportes(empresa, client_secret, host, access_token, client_token, f
         if (index == 6):
             cpcodes = obtener_cpcodes(empresa, client_secret, host, access_token, client_token, fechas)
             for cpc in cpcodes:
-                print(cpc)
                 funciones_disponibles[index-1](empresa, client_secret, host, access_token, client_token, fechas, cpcode = cpc)
             continue
         funciones_disponibles[index-1](empresa, client_secret, host, access_token, client_token, fechas)
     return
 
 
-def imprimir_empresas_o_cpcodes(empresas, first_time=False, cpcodes=False):
+def imprimir_linea_por_linea_de_lista(lista, first_time=False):
     if first_time:
-        if not cpcodes:
-            print("0. Todas las empresas")
+        print("0. Todas las opciones")
     else:
+        print("0. Todas las opciones")
         print("-1. Ya seleccione las opciones que me interesan.")
-        if not cpcodes:
-            print("0. Todas las empresas")
-    for i in range(len(empresas)):
-        print(str(i + 1) + ". " + empresas[i])
+    for i in range(len(lista)):
+        print(str(i + 1) + ". " + lista[i])
     print("")
 
 def int_checker(mensaje, rango):
@@ -104,27 +101,30 @@ def multiples_fechas():
 
 def obtener_cpcodes(empresa, client_secret, host, access_token, client_token, fechas):
     print(f"""
-          Una de sus selecciones para {empresa} fue: 
-          '6. Tabla: Hits por tipo de respuesta, de únicamente un CPcode.'
-          A continuación, se mostrarán todos los CPcodes disponibles. Si
-          desea generar varias tablas (una por CPCODE), favor de ingresar
-          los números uno por uno. Este proceso puede tardar un momento...
-          """)
+     Una de sus selecciones para {empresa} fue: 
+     '6. Tabla: Hits por tipo de respuesta, de únicamente un CPcode.'
+     A continuación, se mostrarán todos los CPcodes disponibles. Si
+     desea generar varias tablas (una por CPCODE), favor de ingresar
+     los números uno por uno. Este proceso puede tardar un momento...
+     """)
     cpcodes_list = extraer_cpcodes(empresa, client_secret, host, access_token, client_token, fechas)
-    imprimir_empresas_o_cpcodes(cpcodes_list, first_time = True, cpcodes=True)
+    imprimir_linea_por_linea_de_lista(cpcodes_list, first_time = True)
     mis_cpcodes = []
-    eleccion = int_checker("Selecciona el cpcode (número de la lista, NO el cpcode): ", [1, len(cpcodes_list)])
-    while (eleccion != -1 and len(mis_cpcodes) < len(cpcodes_list)):
+    eleccion = int_checker(f"Seleccione el cpcode para {empresa} (número de la lista, NO el cpcode): ", [0, len(cpcodes_list)])
+    while (eleccion != -1):
         if (eleccion == 0):
-            print("El 0 no era una opción, elige de nuevo.")
+            print_next("Ha seleccionado todos los cpcodes")
+            return cpcodes_list
         elif (cpcodes_list[eleccion-1].split()[-1].strip('()') in mis_cpcodes):
             print("Ya seleccionó ese número anteriormente.")
             time.sleep(1)
-            time.sleep(1)
         else:
             mis_cpcodes.append(cpcodes_list[eleccion-1].split()[-1].strip('()'))
-        imprimir_empresas_o_cpcodes(cpcodes_list, first_time = False, cpcodes=True)
-        eleccion = int_checker("Seleccione una opción (escoja -1 si ya seleccionó todos los de su interés): ", [-1, len(cpcodes_list)])
+            if (len(mis_cpcodes) == len(cpcodes_list)):
+                print_next("Ha seleccionado todos los cpcodes")
+                return mis_cpcodes
+        imprimir_linea_por_linea_de_lista(cpcodes_list, first_time = False)
+        eleccion = int_checker(f"Seleccione el cpcode para {empresa} (número de la lista, NO el cpcode): ", [-1, len(cpcodes_list)])
     return mis_cpcodes
 
 def obtener_credenciales(archivo, empresas):
@@ -204,67 +204,60 @@ def seleccionar_archivo():
 def seleccionar_empresas(archivo):
     empresas = extraer_todas_las_empresas(archivo)
     empresas_escogidas = []
-    first_time = True
-    imprimir_empresas_o_cpcodes(empresas, first_time)
+    imprimir_linea_por_linea_de_lista(empresas, first_time = True)
     eleccion = int_checker("Escoja qué empresa le interesa (número): ", [0, len(empresas)])
-    if eleccion == 0:
-        print_next("Ha seleccionado todas las empresas.")
-        return obtener_credenciales(archivo, empresas)
-    else:
-        first_time = False
-        while (eleccion != -1 and len(empresas_escogidas) < len(empresas)):
-            
-            if eleccion == 0:
-                print_next("Ha seleccionado todas las empresas.")
-                return obtener_credenciales(archivo, empresas)
-            elif empresas[eleccion - 1] in empresas_escogidas:
-                print("Ya habías elegido ese número anteriormente.")
-                time.sleep(1)
-                time.sleep(1)
-            else:
-                empresas_escogidas.append(empresas[eleccion - 1])
-            imprimir_empresas_o_cpcodes(empresas, first_time)
-            eleccion = int_checker("Escoja qué empresa le interesa (número): ", [-1, len(empresas)])
 
-    if (len(empresas_escogidas) == len(empresas)):
-        print_next("Ha seleccionado todas las empresas.")
-        return obtener_credenciales(archivo, empresas)
-    else:
-        print("Has seleccionado: ", end="")
-        for emp in empresas_escogidas:
-            print(emp, end=', ')
-        print_next("")
+    while (eleccion != -1):
+        if eleccion == 0:
+            print_next("Ha seleccionado todas las empresas")
+            return obtener_credenciales(archivo, empresas)
+        elif empresas[eleccion - 1] in empresas_escogidas:
+            print("Ya habías elegido ese número anteriormente.")
+            time.sleep(1)
+        else:
+            empresas_escogidas.append(empresas[eleccion - 1])
+            if (len(empresas_escogidas) == len(empresas)):
+                print_next("Ha seleccionado todas las empresas")
+                return obtener_credenciales(archivo, empresas_escogidas)
+                
+        imprimir_linea_por_linea_de_lista(empresas, first_time = False)
+        eleccion = int_checker("Escoja qué empresa le interesa (número): ", [-1, len(empresas)])
+
+    print("Has seleccionado: ", end="")
+    for emp in empresas_escogidas:
+        print(emp, end=', ')
+    print_next("")
     return obtener_credenciales(archivo, empresas_escogidas)
 
 
-def seleccionar_fecha():
-    print("Desea seleccionar un mes para el reporte, o quiere consultar el consumo entre dos fechas especificas:")
+def seleccionar_fecha(texto_empresa = "todas las empresas"):
+    print(f"Desea seleccionar un mes para el reporte, o quiere consultar el consumo entre dos fechas especificas para {texto_empresa}: ")
     print("1. Seleccionar un mes.")
     print("2. Seleccionar dos fechas específicas")
     respuesta = int(input("Seleccione una opción (número): "))
     print("")
     if respuesta == 1:
-        seleccionar_mes()
+        seleccionar_mes(texto_empresa)
     else:
         print("AKAMAI solo tiene retención de 92 días.")
-        año_inicio = int(input("El año de la primer fecha (yyyy): "))
-        mes_inicio = int(input("El mes de la primer fecha (mm): "))
-        dia_inicio = int(input("El día de la primer fecha (dd): "))
-        hora_inicio, minuto_inicio = input("La hora/minutos de la primer fecha (hh:mm en formato 24h): ").split(":")
-        año_final = int(input("El año de la última fecha (yyyy): "))
-        mes_final = int(input("El mes de la última fecha (mm): "))
-        dia_final = int(input("El día de la última fecha (dd): "))
-        hora_final, minuto_final = input("La hora/minutos de la última fecha (hh:mm en formato 24h): ").split(":")
+        año_inicio = int(input(f"El año de la primer fecha para {texto_empresa} (yyyy): "))
+        mes_inicio = int(input(f"El mes de la primer fecha para {texto_empresa} (mm): "))
+        dia_inicio = int(input(f"El día de la primer fecha para {texto_empresa} (dd): "))
+        hora_inicio, minuto_inicio = input(f"La hora/minutos de la primer fecha para {texto_empresa} (hh:mm en formato 24h): ").split(":")
+        año_final = int(input(f"El año de la última fecha para {texto_empresa} (yyyy): "))
+        mes_final = int(input(f"El mes de la última fecha para {texto_empresa} (mm): "))
+        dia_final = int(input(f"El día de la última fecha para {texto_empresa} (dd): "))
+        hora_final, minuto_final = input(f"La hora/minutos de la última fecha para {texto_empresa} (hh:mm en formato 24h): ").split(":")
         fecha_inicio, fecha_final = fechas_formato_ISO_8601([año_inicio, mes_inicio, dia_inicio, int(hora_inicio), int(minuto_inicio)], [año_final, mes_final, dia_final, int(hora_final), int(minuto_final)])
-        print_next(f"La fecha inicial {fecha_inicio} y la final {fecha_final}")
+        print_next(f"La fecha inicial para {texto_empresa} es {fecha_inicio} y la final {fecha_final}")
         return [fecha_inicio, fecha_final]
 
 
-def seleccionar_mes():
+def seleccionar_mes(empresa):
     mes_actual = datetime.now().month
     meses_nombres = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"]
     numeros_de_mes_mencionados = []
-    print("Akamai solo retiene información por 92 días. Considerando esto, ¿Sobre qué mes quiere el reporte?")
+    print(f"Akamai solo retiene información por 92 días. Considerando esto, ¿Sobre qué mes quiere el reporte para {empresa}?")
     for i in range(2, -1, -1):
         mes_nombre = meses_nombres[(mes_actual - 1) - i]
         mes_numero = meses_nombres.index(mes_nombre) + 1
@@ -276,38 +269,39 @@ def seleccionar_mes():
     print("")
     mes = int_checker("AKAMAI retiene solo 92 días. Seleccione mes (número): ", [numeros_de_mes_mencionados[0], numeros_de_mes_mencionados[-1]])
     return definir_fecha(meses_nombres[mes - 1])
-    return definir_fecha(meses_nombres[mes - 1])
 
 def seleccionar_reportes(empresa="formato general"):
+    lista_de_tablas_y_graficas = [
+        "Tabla: Tráfico consumido por CPcode",
+        "Tabla: Tráfico Total y Estadísticas (Bytes Total, Bytes por segundo Total, Mínimo y Máximo)",
+        "Gráfica: Tráfico por día (Edge, Midgress, Origin y Offload)",
+        "Gráfica: Hits al Origen por tipo de respuesta (0xx, 1xx, 2xx, 3xx, 4xx, 5xx)",
+        "Tabla: Hits por tipo de respuesta, ordenados por Edge Hits",
+        "Tabla: Igual que la tabla 5, pero de únicamente un CPcode",
+        "Tabla: Hits por URL (Edge Hits, Origin Hits, Offload)"
+    ]
     print(f"""
           De las siguientes opciones de tablas/gráficas, seleccione aquellas que
           desee agregar a su reporte ({empresa}):
-          0. Todas las tablas/gráficas
-          1. Tabla: Tráfico consumido por CPcode
-          2. Tabla: Tráfico Total y Estadísticas (Bytes Total, Bytes por segundo Total, Mínimo y Máximo)
-          3. Gráfica: Tráfico por día (Edge, Midgress, Origin y Offload)
-          4. Gráfica: Hits al Origen por tipo de respuesta (0xx, 1xx, 2xx, 3xx, 4xx, 5xx)
-          5. Tabla: Hits por tipo de respuesta, ordenados por Edge Hits
-          6. Tabla: Igual que la tabla 5, pero de únicamente un CPcode
-          7. Tabla: Hits por URL (Edge Hits, Origin Hits, Offload)
           """)
+    imprimir_linea_por_linea_de_lista(lista_de_tablas_y_graficas, first_time = True)
     números_elegidos = []
-    eleccion = int_checker("Seleccione una opción (número): ", [0,7])
-    if (eleccion == 0):
-        return [1,2,3,4,5,6,7]
-    while (eleccion != -1 and len(números_elegidos) < 7):
+    eleccion = int_checker(f"Seleccione una opción para {empresa} (número): ", [0,7])
+    while (eleccion != -1):
         if (eleccion == 0):
-            números_elegidos = [1,2,3,4,5,6,7]
-            break
+            print_next("Ha seleccionado todas las tablas/gráficas")
+            return [1,2,3,4,5,6,7]
         elif (eleccion in números_elegidos):
             print("Ya seleccionó ese número anteriormente.")
             time.sleep(1)
-            time.sleep(1)
         else:
             números_elegidos.append(eleccion)
-        eleccion = int_checker("Seleccione una opción (escoja -1 si ya seleccionó todos los de su interés): ", [-1,7])
-            
-            
+            if (len(números_elegidos) == 7):
+                print_next("Ha seleccionado todas las tablas/gráficas")
+                return números_elegidos
+        imprimir_linea_por_linea_de_lista(lista_de_tablas_y_graficas, first_time = False)
+        eleccion = int_checker(f"Seleccione una opción {empresa} (número): ", [-1,7])
+    
     return números_elegidos
 
 
