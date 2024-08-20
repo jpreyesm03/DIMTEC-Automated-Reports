@@ -4,6 +4,8 @@ from akamai.edgegrid import EdgeGridAuth # type: ignore
 from urllib.parse import urljoin
 import forallpeople as si # type: ignore
 
+
+
 def extraer_cpcodes(empresa, client_secret, host, access_token, client_token, fechas):
     lista_de_cpcodes = []
     baseurl = 'https://' + host + '/'

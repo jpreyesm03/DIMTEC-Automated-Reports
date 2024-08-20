@@ -1,10 +1,15 @@
 from generador_tablas_y_graficas import extraer_cpcodes, tabla_de_trafico_por_cpcode, tabla_trafico_total_y_estadisticas, grafica_trafico_por_dia, grafica_hits_al_origen_por_tipo_de_respuesta, tabla_hits_por_tipo, hits_por_url  # type: ignore
+from calendarioGUI import obtener_fechas_GUI
 import tkinter as tk
 from tkinter import filedialog
 import re
 import configparser
-from datetime import datetime
+import tkinter as tk
+from tkcalendar import DateEntry  # type: ignore
+from datetime import datetime, timedelta, timezone
 import time
+import threading
+import subprocess
 
 
 def automatico_o_manual():
@@ -40,6 +45,9 @@ def extraer_todas_las_empresas(file_path):
 def fechas_formato_ISO_8601(lista_inicial, lista_final):
     return f"{lista_inicial[0]:04d}-{lista_inicial[1]:02d}-{lista_inicial[2]:02d}T{lista_inicial[3]:02d}:{lista_inicial[4]:02d}:00Z", f"{lista_final[0]:04d}-{lista_final[1]:02d}-{lista_final[2]:02d}T{lista_final[3]:02d}:{lista_final[4]:02d}:00Z"
 
+def fechas_correctas(fecha_inicial, fecha_final, interval_incluido = False):
+    
+    return
 
 def generar_reportes(empresa, client_secret, host, access_token, client_token, fechas, listas_de_reportes):
     funciones_disponibles = [tabla_de_trafico_por_cpcode, tabla_trafico_total_y_estadisticas, grafica_trafico_por_dia, grafica_hits_al_origen_por_tipo_de_respuesta, tabla_hits_por_tipo, tabla_hits_por_tipo, hits_por_url]
@@ -235,23 +243,30 @@ def seleccionar_fecha(texto_empresa = "todas las empresas"):
     print(f"Desea seleccionar un mes para el reporte, o quiere consultar el consumo entre dos fechas especificas para {texto_empresa}: ")
     print("1. Seleccionar un mes.")
     print("2. Seleccionar dos fechas específicas")
-    respuesta = int(input("Seleccione una opción (número): "))
+    respuesta = int_checker("Seleccione una opción (número): ", [1,2])
     print("")
     if respuesta == 1:
         seleccionar_mes(texto_empresa)
     else:
         print("AKAMAI solo tiene retención de 92 días.")
-        año_inicio = int(input(f"El año de la primer fecha para {texto_empresa} (yyyy): "))
-        mes_inicio = int(input(f"El mes de la primer fecha para {texto_empresa} (mm): "))
-        dia_inicio = int(input(f"El día de la primer fecha para {texto_empresa} (dd): "))
-        hora_inicio, minuto_inicio = input(f"La hora/minutos de la primer fecha para {texto_empresa} (hh:mm en formato 24h): ").split(":")
-        año_final = int(input(f"El año de la última fecha para {texto_empresa} (yyyy): "))
-        mes_final = int(input(f"El mes de la última fecha para {texto_empresa} (mm): "))
-        dia_final = int(input(f"El día de la última fecha para {texto_empresa} (dd): "))
-        hora_final, minuto_final = input(f"La hora/minutos de la última fecha para {texto_empresa} (hh:mm en formato 24h): ").split(":")
-        fecha_inicio, fecha_final = fechas_formato_ISO_8601([año_inicio, mes_inicio, dia_inicio, int(hora_inicio), int(minuto_inicio)], [año_final, mes_final, dia_final, int(hora_final), int(minuto_final)])
+        fecha_inicio = run_calendar_program("")
+        print("Fecha inicial MAIN seleccionar_fechas: " + fecha_inicio)
+        fecha_final = run_calendar_program(str(fecha_inicio))
+        print("Fecha final: " + fecha_final)
         print_next(f"La fecha inicial para {texto_empresa} es {fecha_inicio} y la final {fecha_final}")
         return [fecha_inicio, fecha_final]
+    
+def run_calendar_program(arg1):
+    # Execute the secondary program and capture the output
+    result = subprocess.run(
+        ['python', 'calendarioGUI.py', arg1],
+        capture_output=True,
+        text=True
+    )
+    # Output from the secondary program
+    # print("Output MAIN run_calendar_program:", result.stdout.strip())
+    # print("Error MAIN run_calendar_program:", result.stderr)
+    return result.stdout.strip()
 
 
 def seleccionar_mes(empresa):
@@ -307,5 +322,102 @@ def seleccionar_reportes(empresa="formato general"):
 
 
 
+# def widget_calendario(min_date_given=""):
+
+#     def check_main_thread():
+#         if threading.current_thread() is not threading.main_thread():
+#             raise RuntimeError("Tkinter must be run on the main thread")
+
+#     def corrected_date(date_str):
+#         date_format = "%Y-%m-%dT%H:%M:%SZ"
+#         pattern = re.compile(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z")
+#         if not pattern.match(date_str):
+#             raise ValueError(f"Date string '{date_str}' does not match format '{date_format}'")
+
+#         try:
+#             return datetime.strptime(date_str, date_format).replace(tzinfo=timezone.utc)
+#         except ValueError as e:
+#             print(f"Error parsing date: {e}")
+#             raise
+
+#     selected_date = None
+#     selected_time = None
+
+#     def get_date_time():
+#         nonlocal selected_date, selected_time
+#         try:
+#             selected_date = cal.get_date()  # Get the selected date from the DateEntry widget
+#             selected_time = time_hour.get() + ":" + time_minute.get()  # Get the selected time from the Spinbox widgets
+#         except Exception as e:
+#             print(f"Error getting date and time: {e}")
+#         finally:
+#             root.after(0, root.destroy)  # Ensure the GUI window is destroyed on the main thread
+
+#     def background_task():
+#         # Simulate a long-running task
+#         import time
+#         time.sleep(2)  # Simulate delay
+#         # You can call a function to update the GUI if needed
+#         # root.after(0, update_gui)  # Example for GUI update
+
+#     today = datetime.today().date()  # Use datetime.today().date() to get the current date
+#     now = datetime.now()  # Use datetime.now() to get the current datetime
+#     max_date = today - timedelta(days=1)
+
+#     if not min_date_given:
+#         min_date = today - timedelta(days=91)
+#         fecha_a_mostrar = min_date
+#         titulo_a_mostrar = "Seleccione una fecha y hora inicial:"
+#     else:
+#         try:
+#             min_date = corrected_date(min_date_given)
+#             min_date += timedelta(days=1)
+#         except ValueError as e:
+#             return f"Error: {e}"
+
+#         fecha_a_mostrar = max_date
+#         titulo_a_mostrar = "Seleccione una fecha y hora final:"
+
+#     root = tk.Tk()
+#     root.title(titulo_a_mostrar)
+    
+#     check_main_thread()  # Ensure Tkinter is on the main thread
+
+#     # Set the DateEntry widget to start at max_date
+#     cal = DateEntry(root, width=12, background='darkblue', foreground='white', borderwidth=2,
+#                     year=fecha_a_mostrar.year, month=fecha_a_mostrar.month, day=fecha_a_mostrar.day,
+#                     locale='es_ES', maxdate=max_date, mindate=min_date,
+#                     weekendbackground='white', weekendforeground='black')
+#     cal.pack(pady=10)
+
+#     # Initialize Spinbox widgets for time with full range and default to current time
+#     time_hour = tk.Spinbox(root, from_=0, to=23, width=2, format="%02.0f", justify='center')
+#     time_hour.pack(side='left', padx=(10, 5))
+#     time_hour.delete(0, 'end')
+#     time_hour.insert(0, f"{now.hour:02d}")
+
+#     time_minute = tk.Spinbox(root, from_=0, to=59, width=2, format="%02.0f", justify='center')
+#     time_minute.pack(side='left', padx=(5, 10))
+#     time_minute.delete(0, 'end')
+#     time_minute.insert(0, f"{now.minute:02d}")
+
+#     button = tk.Button(root, text="Obtener fecha y hora", command=get_date_time)
+#     button.pack(pady=10)
+
+#     # Start the background task in a separate thread
+#     thread = threading.Thread(target=background_task)
+#     thread.start()
+
+#     root.mainloop()
+
+#     # Capture the return values after the window is closed
+#     if selected_date is not None and selected_time is not None:
+#         return str(selected_date) + "T" + str(selected_time) + ":00Z"
+#     else:
+#         return "No date and time selected"
+
+
+
 if __name__ == "__main__":
+    seleccionar_fecha()
     main()

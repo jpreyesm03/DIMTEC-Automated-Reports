@@ -10,6 +10,7 @@ from funciones_cortas import reportes_distintos # type: ignore
 
 introduccion = "¡Hola! Puedes generar todos los reportes desde este programa. La idea es que solamente utilice números a lo largo del programa."
 
+
 def main():
     print(introduccion)
     es_manual = automatico_o_manual()
