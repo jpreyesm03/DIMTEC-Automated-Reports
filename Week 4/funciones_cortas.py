@@ -1,5 +1,4 @@
 from generador_tablas_y_graficas import extraer_cpcodes, tabla_de_trafico_por_cpcode, tabla_trafico_total_y_estadisticas, grafica_trafico_por_dia, grafica_hits_al_origen_por_tipo_de_respuesta, tabla_hits_por_tipo, hits_por_url  # type: ignore
-from calendarioGUI import obtener_fechas_GUI
 import tkinter as tk
 from tkinter import filedialog
 import re
@@ -11,6 +10,26 @@ import time
 import threading
 import subprocess
 import os
+
+def agregar_tiempo(fecha_a_cambiar, cambiar_seis_horas = False):
+    # Define the format of the input string
+    formato_de_fecha = "%Y-%m-%dT%H:%M:%SZ"
+    
+    # Parse the input date string
+    fecha = datetime.strptime(fecha_a_cambiar, formato_de_fecha)
+    
+    if (cambiar_seis_horas):
+        # Add six hours to the date
+        fecha_posterior = fecha + timedelta(hours=6)
+    else:
+        fecha_posterior = fecha + timedelta(days=1)
+        # Set time to midnight (00:00:00)
+        fecha_posterior = fecha_posterior.replace(hour=0, minute=0, second=0, microsecond=0)
+    
+    # Format the result as a string
+    nueva_fecha = fecha_posterior.strftime(formato_de_fecha)
+    
+    return nueva_fecha
 
 
 def automatico_o_manual():
@@ -24,6 +43,14 @@ def automatico_o_manual():
         return True
     else:
         return False
+    
+def correr_programa_subproceso(arg1):
+    result = subprocess.run(
+        ['python', 'calendarioGUI.py', arg1],
+        capture_output=True,
+        text=True
+    )
+    return result.stdout.strip()
 
 def crear_carpeta(nombre_de_empresa = "", carpeta = ""):
     dia = str("{:02}".format(datetime.now().day))
@@ -108,25 +135,39 @@ def extraer_todas_las_empresas(file_path):
         sections.extend(matches)
     return sections
 
-
-def fechas_formato_ISO_8601(lista_inicial, lista_final):
-    return f"{lista_inicial[0]:04d}-{lista_inicial[1]:02d}-{lista_inicial[2]:02d}T{lista_inicial[3]:02d}:{lista_inicial[4]:02d}:00Z", f"{lista_final[0]:04d}-{lista_final[1]:02d}-{lista_final[2]:02d}T{lista_final[3]:02d}:{lista_final[4]:02d}:00Z"
-
-def fechas_correctas(fecha_inicial, fecha_final, interval_incluido = False):
-    
-    return
+def fechas_correctas_ISO_8601(fechas, interval = "NONE"):
+    fecha_inicial_modificada = fechas[0]
+    fecha_final_modificada = fechas[1]
+    if (interval == "NONE"):
+        for i in range(len(fechas)):
+            if (fechas[i][15] != '0' and fechas[i][15] != '5'):
+                if (i == 0):
+                    fecha_inicial_modificada = fecha_inicial_modificada[:15] + "5" + fecha_inicial_modificada[16:]
+                else:
+                    fecha_final_modificada = fecha_final_modificada[:15] + "5" + fecha_final_modificada[16:]
+    elif (interval == "HOUR"):
+        fecha_inicial_modificada = fecha_inicial_modificada[:14] + "00" + fecha_inicial_modificada[16:]                
+        fecha_final_modificada = fecha_final_modificada[:14] + "00" + fecha_final_modificada[16:]
+    else:
+        fecha_inicial_modificada = fecha_inicial_modificada[:11] + "00:00" + fecha_inicial_modificada[16:]   
+        fecha_final_modificada = agregar_tiempo(fecha_final_modificada, cambiar_seis_horas = False)
+    return [agregar_tiempo(fecha_inicial_modificada, cambiar_seis_horas = True), agregar_tiempo(fecha_final_modificada, cambiar_seis_horas = True)]
 
 def generar_reportes(empresa, client_secret, host, access_token, client_token, fechas, listas_de_reportes, carpeta_creada):
     subcarpeta_path = crear_carpeta(nombre_de_empresa = empresa, carpeta = carpeta_creada)
     funciones_disponibles = [tabla_de_trafico_por_cpcode, tabla_trafico_total_y_estadisticas, grafica_trafico_por_dia, grafica_hits_al_origen_por_tipo_de_respuesta, tabla_hits_por_tipo, tabla_hits_por_tipo, hits_por_url]
     print_next(f"Etapa actual: producción de tablas/gráficas. Este proceso suele tardas varios minutos por empresa: {empresa}")
     for index in listas_de_reportes:
-        if (index == 6):
-            cpcodes = obtener_cpcodes(empresa, client_secret, host, access_token, client_token, fechas)
+        if (index == 2):
+            funciones_disponibles[index-1](empresa, client_secret, host, access_token, client_token, fechas_correctas_ISO_8601(fechas, interval = "FIVE_MINUTES"), subcarpeta_path)
+        elif (index == 4):
+            funciones_disponibles[index-1](empresa, client_secret, host, access_token, client_token, fechas_correctas_ISO_8601(fechas, interval = "HOUR"), subcarpeta_path)
+        elif (index == 6):
+            cpcodes = obtener_cpcodes(empresa, client_secret, host, access_token, client_token, fechas_correctas_ISO_8601(fechas, interval = "NONE"))
             for cpc in cpcodes:
-                funciones_disponibles[index-1](empresa, client_secret, host, access_token, client_token, fechas, subcarpeta_path, cpcode = cpc)
-            continue
-        funciones_disponibles[index-1](empresa, client_secret, host, access_token, client_token, fechas, subcarpeta_path)
+                funciones_disponibles[index-1](empresa, client_secret, host, access_token, client_token, fechas_correctas_ISO_8601(fechas, interval = "NONE"), subcarpeta_path, cpcode = cpc)
+        else:
+            funciones_disponibles[index-1](empresa, client_secret, host, access_token, client_token, fechas_correctas_ISO_8601(fechas, interval = "NONE"), subcarpeta_path)
     return
 
 
@@ -239,37 +280,27 @@ def reportes_generales(archivo, fechas, carpeta_creada):
     for empresa, credenciales in empresas.items():
         print_next(f"Etapa actual: producción de tablas/gráficas. Este proceso suele tardas varios minutos por empresa: {empresa}")
         subcarpeta_path = crear_carpeta(nombre_de_empresa = empresa, carpeta = carpeta_creada)
-        cpcodes = extraer_cpcodes(empresa, credenciales[0], credenciales[1], credenciales[2], credenciales[3], fechas)
-        tabla_de_trafico_por_cpcode(empresa, credenciales[0], credenciales[1], credenciales[2], credenciales[3], fechas, subcarpeta_path)
-        tabla_trafico_total_y_estadisticas(empresa, credenciales[0], credenciales[1], credenciales[2], credenciales[3], fechas, subcarpeta_path)
-        grafica_trafico_por_dia(empresa, credenciales[0], credenciales[1], credenciales[2], credenciales[3], fechas, subcarpeta_path)
-        grafica_hits_al_origen_por_tipo_de_respuesta(empresa, credenciales[0], credenciales[1], credenciales[2], credenciales[3], fechas, subcarpeta_path)
-        tabla_hits_por_tipo(empresa, credenciales[0], credenciales[1], credenciales[2], credenciales[3], fechas, subcarpeta_path)
+        cpcodes = extraer_cpcodes(empresa, credenciales[0], credenciales[1], credenciales[2], credenciales[3], fechas_correctas_ISO_8601(fechas, interval = "NONE"))
+        tabla_de_trafico_por_cpcode(empresa, credenciales[0], credenciales[1], credenciales[2], credenciales[3], fechas_correctas_ISO_8601(fechas, interval = "NONE"), subcarpeta_path)
+        tabla_trafico_total_y_estadisticas(empresa, credenciales[0], credenciales[1], credenciales[2], credenciales[3], fechas_correctas_ISO_8601(fechas, interval = "FIVE_MINUTES"), subcarpeta_path)
+        grafica_trafico_por_dia(empresa, credenciales[0], credenciales[1], credenciales[2], credenciales[3], fechas_correctas_ISO_8601(fechas, interval = "NONE"), subcarpeta_path)
+        grafica_hits_al_origen_por_tipo_de_respuesta(empresa, credenciales[0], credenciales[1], credenciales[2], credenciales[3], fechas_correctas_ISO_8601(fechas, interval = "HOUR"), subcarpeta_path)
+        tabla_hits_por_tipo(empresa, credenciales[0], credenciales[1], credenciales[2], credenciales[3], fechas_correctas_ISO_8601(fechas, interval = "NONE"), subcarpeta_path)
         try:
             for i in range(len(cpcodes)):
                 if (i < 3):
-                    tabla_hits_por_tipo(empresa, credenciales[0], credenciales[1], credenciales[2], credenciales[3], fechas, subcarpeta_path, cpcodes[i].split()[-1].strip('()'))
+                    tabla_hits_por_tipo(empresa, credenciales[0], credenciales[1], credenciales[2], credenciales[3], fechas_correctas_ISO_8601(fechas, interval = "NONE"), subcarpeta_path, cpcodes[i].split()[-1].strip('()'))
                 else:
                     break
         except:
             print("No se detectaron cpcodes. ¿Está seguro que las credenciales de las APIs están vigentes?")
-        hits_por_url(empresa, credenciales[0], credenciales[1], credenciales[2], credenciales[3], fechas, subcarpeta_path)
+        hits_por_url(empresa, credenciales[0], credenciales[1], credenciales[2], credenciales[3], fechas_correctas_ISO_8601(fechas, interval = "NONE"), subcarpeta_path)
         
         print("\n"*4 + "-"*6 + f"Reportes de {empresa} terminados" + "-"*6 + "\n"*4)
         print("Queda(n) " + str(len(empresas) - 1 - contador) + " reporte(s) por generar." + "\n")
         contador += 1
     
-def run_calendar_program(arg1):
-    # Execute the secondary program and capture the output
-    result = subprocess.run(
-        ['python', 'calendarioGUI.py', arg1],
-        capture_output=True,
-        text=True
-    )
-    # Output from the secondary program
-    # print("Output MAIN run_calendar_program:", result.stdout.strip())
-    # print("Error MAIN run_calendar_program:", result.stderr)
-    return result.stdout.strip()
+
 
 def seleccionar_archivo():
     print("\n" + "Abriendo ventana para seleccionar archivo...")
@@ -329,9 +360,9 @@ def seleccionar_fecha(texto_empresa = "todas las empresas"):
         seleccionar_mes(texto_empresa)
     else:
         print("AKAMAI solo tiene retención de 92 días.")
-        fecha_inicio = run_calendar_program("")
+        fecha_inicio = correr_programa_subproceso("")
         print("Fecha inicial: " + fecha_inicio)
-        fecha_final = run_calendar_program(str(fecha_inicio))
+        fecha_final = correr_programa_subproceso(str(fecha_inicio))
         print("Fecha final: " + fecha_final)
         print_next(f"La fecha inicial para {texto_empresa} es {fecha_inicio} y la final {fecha_final}")
         return [fecha_inicio, fecha_final]

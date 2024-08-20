@@ -76,8 +76,8 @@ for section in config.sections():
     name = "traffic-by-timeandresponseclass"
     path = '/reporting-api/v1/reports/{}/versions/{}/report-data'.format(name, version)
     querystring = {
-    "start": "2024-07-01T00:00:00Z",
-    "end": "2024-08-01T00:00:00Z",
+    "start": "2024-07-01T05:00:00Z",
+    "end": "2024-07-03T03:00:00Z",
     "interval": "HOUR",
     "objectIds": "all",
     "metrics": "originHitsPerSecond", # Al menos una métrica es necesaria...
@@ -151,6 +151,7 @@ for section in config.sections():
     # Show the plot
     plt.show()
     print("\n"*4 + "-"*10 + section + "-"*10 + "\n"*4)
+    break
     
     
     
