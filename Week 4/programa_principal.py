@@ -16,7 +16,7 @@ def main():
     print(introduccion)
     es_manual = automatico_o_manual()
     archivo = seleccionar_archivo()
-    crear_carpeta()
+    carpeta = crear_carpeta()
     if (es_manual):
         empresas_y_credenciales = seleccionar_empresas(archivo)
         son_multiples_fechas = multiples_fechas()
@@ -32,12 +32,12 @@ def main():
                 fechas = seleccionar_fecha(texto_empresa = empresa)
             if (son_reportes_distintos):
                 lista_de_reportes = seleccionar_reportes(empresa)
-            generar_reportes(empresa, credenciales[0], credenciales[1], credenciales[2], credenciales[3], fechas, lista_de_reportes)
+            generar_reportes(empresa, credenciales[0], credenciales[1], credenciales[2], credenciales[3], fechas, lista_de_reportes, carpeta)
             print("Quedan " + str(len(empresas_y_credenciales) - 1 - contador) + " reportes por generar.")
             contador += 1
     else:
         fecha = seleccionar_fecha()
-        reportes_generales(archivo, fecha)
+        reportes_generales(archivo, fecha, carpeta)
     print("La generación de reportes ha concluido. Si algún reporte faltase, probablemente tenía el archivo abierto.")
 # Sólamente correrá el programa si se solicita correr directamente.
 if __name__ == "__main__":

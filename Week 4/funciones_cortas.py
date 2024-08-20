@@ -25,7 +25,7 @@ def automatico_o_manual():
     else:
         return False
 
-def crear_carpeta(nombre_de_empresa = ""):
+def crear_carpeta(nombre_de_empresa = "", carpeta = ""):
     if not nombre_de_empresa:
         dia = str("{:02}".format(datetime.now().day))
         mes = str("{:02}".format(datetime.now().month))
@@ -34,16 +34,20 @@ def crear_carpeta(nombre_de_empresa = ""):
         nombre_carpeta = definir_nombre(nombre)
         os.makedirs(nombre_carpeta)
         print_next(f"Carpeta creada: {nombre_carpeta}")
+        return nombre_carpeta
     else:
-        crear_subcarpeta(os.getcwd(), nombre_de_empresa)
+        return crear_subcarpeta(nombre_carpeta, f"Reporte_de_{nombre_de_empresa}" + dia + "_" + mes + "_" + año)
 
-def crear_subcarpeta(base_path, empresa):
-    latest_carpeta = ultima_carpeta(base_path)
-    latest_carpeta_path = os.path.join(base_path, latest_carpeta)
-    nueva_carpeta = definir_nombre(f"Reportes_{empresa}", latest_carpeta_path, True)
-    os.makedirs(nueva_carpeta)
-    print(f"Subcarpeta creada: {nueva_carpeta}")
-
+def crear_subcarpeta(carpeta_ancestra, nombre_de_subcarpeta_ideal):
+    # Get the current working directory
+    actual_dir = os.getcwd()
+    
+    # Path to the parent folder
+    carpeta_ancestra = os.path.join(actual_dir, carpeta_ancestra)
+    subcarpeta_path = definir_nombre(nombre_de_subcarpeta_ideal, carpeta_ancestra_path = carpeta_ancestra, subcarpeta = True)
+    os.makedirs(subcarpeta_path)
+    print_next(f"Subcarpeta creada: {subcarpeta_path}")
+    return subcarpeta_path
 
 def definir_fecha_de_mes(mes_eleccion):
     # mes_dos_digitos = str("{:02}".format(mes))
@@ -77,23 +81,23 @@ def definir_fecha_de_mes(mes_eleccion):
     fecha_final = año_final + "-" + mes_final + "-" + dia_final + "T00:00:00Z"
     return [fecha_inicial, fecha_final]
 
-def definir_nombre(nombre, path = "", subcarpeta = False):
+def definir_nombre(nombre_ideal, carpeta_ancestra_path = "", subcarpeta = False):
     if (not subcarpeta):
         contador = 1
-        nombre_carpeta = nombre
+        nombre_carpeta = nombre_ideal
 
         while os.path.exists(nombre_carpeta):
-            nombre_carpeta = f"{nombre}[{contador}]"
+            nombre_carpeta = f"{nombre_ideal}[{contador}]"
             contador += 1
         return nombre_carpeta
     else:
         contador = 1
-        nuevo_path = os.path.join(path, nombre)
+        subcarpeta_path = os.path.join(carpeta_ancestra_path, nombre_ideal)
         
-        while os.path.exists(nuevo_path):
-            nuevo_path = os.path.join(path, f"{nombre}[{contador}]")
+        while os.path.exists(subcarpeta_path):
+            subcarpeta_path = os.path.join(carpeta_ancestra_path, f"{nombre_ideal}[{contador}]")
             contador += 1
-        return nuevo_path
+        return subcarpeta_path
 
 def extraer_todas_las_empresas(file_path):
     sections = []
@@ -112,17 +116,17 @@ def fechas_correctas(fecha_inicial, fecha_final, interval_incluido = False):
     
     return
 
-def generar_reportes(empresa, client_secret, host, access_token, client_token, fechas, listas_de_reportes):
-    crear_carpeta(nombre_de_empresa = empresa)
+def generar_reportes(empresa, client_secret, host, access_token, client_token, fechas, listas_de_reportes, carpeta_creada):
+    subcarpeta_path = crear_carpeta(nombre_de_empresa = empresa, carpeta = carpeta_creada)
     funciones_disponibles = [tabla_de_trafico_por_cpcode, tabla_trafico_total_y_estadisticas, grafica_trafico_por_dia, grafica_hits_al_origen_por_tipo_de_respuesta, tabla_hits_por_tipo, tabla_hits_por_tipo, hits_por_url]
     for index in listas_de_reportes:
         print_next("Etapa actual: producción de tablas/gráficas. Este proceso suele tardas varios minutos por empresa.")
         if (index == 6):
             cpcodes = obtener_cpcodes(empresa, client_secret, host, access_token, client_token, fechas)
             for cpc in cpcodes:
-                funciones_disponibles[index-1](empresa, client_secret, host, access_token, client_token, fechas, cpcode = cpc)
+                funciones_disponibles[index-1](empresa, client_secret, host, access_token, client_token, fechas, subcarpeta_path, cpcode = cpc)
             continue
-        funciones_disponibles[index-1](empresa, client_secret, host, access_token, client_token, fechas)
+        funciones_disponibles[index-1](empresa, client_secret, host, access_token, client_token, fechas, subcarpeta_path)
     return
 
 
@@ -229,27 +233,27 @@ def reportes_distintos():
     else:
         return False
 
-def reportes_generales(archivo, fechas):
+def reportes_generales(archivo, fechas, carpeta_creada):
     empresas = obtener_credenciales(archivo, extraer_todas_las_empresas(archivo))
     
     for empresa, credenciales in empresas.items():
         print_next("Etapa actual: producción de tablas/gráficas. Este proceso suele tardas varios minutos por empresa.")
-        crear_carpeta(nombre_de_empresa = empresa)
-        cpcodes = extraer_cpcodes(empresa, credenciales[0], credenciales[1], credenciales[2], credenciales[3], fechas)
-        tabla_de_trafico_por_cpcode(empresa, credenciales[0], credenciales[1], credenciales[2], credenciales[3], fechas)
-        tabla_trafico_total_y_estadisticas(empresa, credenciales[0], credenciales[1], credenciales[2], credenciales[3], fechas)
-        grafica_trafico_por_dia(empresa, credenciales[0], credenciales[1], credenciales[2], credenciales[3], fechas)
-        grafica_hits_al_origen_por_tipo_de_respuesta(empresa, credenciales[0], credenciales[1], credenciales[2], credenciales[3], fechas)
-        tabla_hits_por_tipo(empresa, credenciales[0], credenciales[1], credenciales[2], credenciales[3], fechas)
+        subcarpeta_path = crear_carpeta(nombre_de_empresa = empresa, carpeta = carpeta_creada)
+        cpcodes = extraer_cpcodes(empresa, credenciales[0], credenciales[1], credenciales[2], credenciales[3], fechas, subcarpeta_path)
+        tabla_de_trafico_por_cpcode(empresa, credenciales[0], credenciales[1], credenciales[2], credenciales[3], fechas, subcarpeta_path)
+        tabla_trafico_total_y_estadisticas(empresa, credenciales[0], credenciales[1], credenciales[2], credenciales[3], fechas, subcarpeta_path)
+        grafica_trafico_por_dia(empresa, credenciales[0], credenciales[1], credenciales[2], credenciales[3], fechas, subcarpeta_path)
+        grafica_hits_al_origen_por_tipo_de_respuesta(empresa, credenciales[0], credenciales[1], credenciales[2], credenciales[3], fechas, subcarpeta_path)
+        tabla_hits_por_tipo(empresa, credenciales[0], credenciales[1], credenciales[2], credenciales[3], fechas, subcarpeta_path)
         try:
             for i in range(len(cpcodes)):
                 if (i < 3):
-                    tabla_hits_por_tipo(empresa, credenciales[0], credenciales[1], credenciales[2], credenciales[3], fechas, cpcodes[i].split()[-1].strip('()'))
+                    tabla_hits_por_tipo(empresa, credenciales[0], credenciales[1], credenciales[2], credenciales[3], fechas, subcarpeta_path, cpcodes[i].split()[-1].strip('()'))
                 else:
                     break
         except:
             print("No se detectaron cpcodes. ¿Está seguro que las credenciales de las APIs están vigentes?")
-        hits_por_url(empresa, credenciales[0], credenciales[1], credenciales[2], credenciales[3], fechas)
+        hits_por_url(empresa, credenciales[0], credenciales[1], credenciales[2], credenciales[3], fechas, subcarpeta_path)
         print_next(f"Todos los reportes de {empresa} fueron generados.")
     
 def run_calendar_program(arg1):
