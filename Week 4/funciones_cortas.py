@@ -10,6 +10,7 @@ from datetime import datetime, timedelta, timezone
 import time
 import threading
 import subprocess
+import os
 
 
 def automatico_o_manual():
@@ -24,10 +25,27 @@ def automatico_o_manual():
     else:
         return False
 
-def crear_folder(empresa, fechas):
-    return
+def crear_carpeta(nombre_de_empresa = ""):
+    if not nombre_de_empresa:
+        dia = str("{:02}".format(datetime.now().day))
+        mes = str("{:02}".format(datetime.now().month))
+        año = str(datetime.now().year)
+        nombre = "Reportes_por_Empresa_" + dia + "_" + mes + "_" + año
+        nombre_carpeta = definir_nombre(nombre)
+        os.makedirs(nombre_carpeta)
+        print_next(f"Carpeta creada: {nombre_carpeta}")
+    else:
+        crear_subcarpeta(os.getcwd(), nombre_de_empresa)
 
-def definir_fecha(mes_eleccion):
+def crear_subcarpeta(base_path, empresa):
+    latest_carpeta = ultima_carpeta(base_path)
+    latest_carpeta_path = os.path.join(base_path, latest_carpeta)
+    nueva_carpeta = definir_nombre(f"Reportes_{empresa}", latest_carpeta_path, True)
+    os.makedirs(nueva_carpeta)
+    print(f"Subcarpeta creada: {nueva_carpeta}")
+
+
+def definir_fecha_de_mes(mes_eleccion):
     # mes_dos_digitos = str("{:02}".format(mes))
     año_actual = datetime.now().year
     mes_actual = datetime.now().month
@@ -59,6 +77,24 @@ def definir_fecha(mes_eleccion):
     fecha_final = año_final + "-" + mes_final + "-" + dia_final + "T00:00:00Z"
     return [fecha_inicial, fecha_final]
 
+def definir_nombre(nombre, path = "", subcarpeta = False):
+    if (not subcarpeta):
+        contador = 1
+        nombre_carpeta = nombre
+
+        while os.path.exists(nombre_carpeta):
+            nombre_carpeta = f"{nombre}[{contador}]"
+            contador += 1
+        return nombre_carpeta
+    else:
+        contador = 1
+        nuevo_path = os.path.join(path, nombre)
+        
+        while os.path.exists(nuevo_path):
+            nuevo_path = os.path.join(path, f"{nombre}[{contador}]")
+            contador += 1
+        return nuevo_path
+
 def extraer_todas_las_empresas(file_path):
     sections = []
     with open(file_path, 'r') as file:
@@ -77,8 +113,8 @@ def fechas_correctas(fecha_inicial, fecha_final, interval_incluido = False):
     return
 
 def generar_reportes(empresa, client_secret, host, access_token, client_token, fechas, listas_de_reportes):
+    crear_carpeta(nombre_de_empresa = empresa)
     funciones_disponibles = [tabla_de_trafico_por_cpcode, tabla_trafico_total_y_estadisticas, grafica_trafico_por_dia, grafica_hits_al_origen_por_tipo_de_respuesta, tabla_hits_por_tipo, tabla_hits_por_tipo, hits_por_url]
-    crear_folder(empresa, fechas)
     for index in listas_de_reportes:
         print_next("Etapa actual: producción de tablas/gráficas. Este proceso suele tardas varios minutos por empresa.")
         if (index == 6):
@@ -198,7 +234,7 @@ def reportes_generales(archivo, fechas):
     
     for empresa, credenciales in empresas.items():
         print_next("Etapa actual: producción de tablas/gráficas. Este proceso suele tardas varios minutos por empresa.")
-        crear_folder(empresa, fechas)
+        crear_carpeta(nombre_de_empresa = empresa)
         cpcodes = extraer_cpcodes(empresa, credenciales[0], credenciales[1], credenciales[2], credenciales[3], fechas)
         tabla_de_trafico_por_cpcode(empresa, credenciales[0], credenciales[1], credenciales[2], credenciales[3], fechas)
         tabla_trafico_total_y_estadisticas(empresa, credenciales[0], credenciales[1], credenciales[2], credenciales[3], fechas)
@@ -311,7 +347,7 @@ def seleccionar_mes(empresa):
             print(str(mes_numero) + ". " + mes_nombre)
     print("")
     mes = int_checker("AKAMAI retiene solo 92 días. Seleccione mes (número): ", [numeros_de_mes_mencionados[0], numeros_de_mes_mencionados[-1]])
-    return definir_fecha(mes)
+    return definir_fecha_de_mes(mes)
 
 def seleccionar_reportes(empresa="formato general"):
     lista_de_tablas_y_graficas = [
@@ -347,103 +383,18 @@ def seleccionar_reportes(empresa="formato general"):
     
     return números_elegidos
 
-
-
-# def widget_calendario(min_date_given=""):
-
-#     def check_main_thread():
-#         if threading.current_thread() is not threading.main_thread():
-#             raise RuntimeError("Tkinter must be run on the main thread")
-
-#     def corrected_date(date_str):
-#         date_format = "%Y-%m-%dT%H:%M:%SZ"
-#         pattern = re.compile(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z")
-#         if not pattern.match(date_str):
-#             raise ValueError(f"Date string '{date_str}' does not match format '{date_format}'")
-
-#         try:
-#             return datetime.strptime(date_str, date_format).replace(tzinfo=timezone.utc)
-#         except ValueError as e:
-#             print(f"Error parsing date: {e}")
-#             raise
-
-#     selected_date = None
-#     selected_time = None
-
-#     def get_date_time():
-#         nonlocal selected_date, selected_time
-#         try:
-#             selected_date = cal.get_date()  # Get the selected date from the DateEntry widget
-#             selected_time = time_hour.get() + ":" + time_minute.get()  # Get the selected time from the Spinbox widgets
-#         except Exception as e:
-#             print(f"Error getting date and time: {e}")
-#         finally:
-#             root.after(0, root.destroy)  # Ensure the GUI window is destroyed on the main thread
-
-#     def background_task():
-#         # Simulate a long-running task
-#         import time
-#         time.sleep(2)  # Simulate delay
-#         # You can call a function to update the GUI if needed
-#         # root.after(0, update_gui)  # Example for GUI update
-
-#     today = datetime.today().date()  # Use datetime.today().date() to get the current date
-#     now = datetime.now()  # Use datetime.now() to get the current datetime
-#     max_date = today - timedelta(days=1)
-
-#     if not min_date_given:
-#         min_date = today - timedelta(days=91)
-#         fecha_a_mostrar = min_date
-#         titulo_a_mostrar = "Seleccione una fecha y hora inicial:"
-#     else:
-#         try:
-#             min_date = corrected_date(min_date_given)
-#             min_date += timedelta(days=1)
-#         except ValueError as e:
-#             return f"Error: {e}"
-
-#         fecha_a_mostrar = max_date
-#         titulo_a_mostrar = "Seleccione una fecha y hora final:"
-
-#     root = tk.Tk()
-#     root.title(titulo_a_mostrar)
+def ultima_carpeta(base_path):
+    # List all items in the base path
+    archivos = os.listdir(base_path)
+    carpetas = [f for f in archivos if os.path.isdir(os.path.join(base_path, f))]
     
-#     check_main_thread()  # Ensure Tkinter is on the main thread
-
-#     # Set the DateEntry widget to start at max_date
-#     cal = DateEntry(root, width=12, background='darkblue', foreground='white', borderwidth=2,
-#                     year=fecha_a_mostrar.year, month=fecha_a_mostrar.month, day=fecha_a_mostrar.day,
-#                     locale='es_ES', maxdate=max_date, mindate=min_date,
-#                     weekendbackground='white', weekendforeground='black')
-#     cal.pack(pady=10)
-
-#     # Initialize Spinbox widgets for time with full range and default to current time
-#     time_hour = tk.Spinbox(root, from_=0, to=23, width=2, format="%02.0f", justify='center')
-#     time_hour.pack(side='left', padx=(10, 5))
-#     time_hour.delete(0, 'end')
-#     time_hour.insert(0, f"{now.hour:02d}")
-
-#     time_minute = tk.Spinbox(root, from_=0, to=59, width=2, format="%02.0f", justify='center')
-#     time_minute.pack(side='left', padx=(5, 10))
-#     time_minute.delete(0, 'end')
-#     time_minute.insert(0, f"{now.minute:02d}")
-
-#     button = tk.Button(root, text="Obtener fecha y hora", command=get_date_time)
-#     button.pack(pady=10)
-
-#     # Start the background task in a separate thread
-#     thread = threading.Thread(target=background_task)
-#     thread.start()
-
-#     root.mainloop()
-
-#     # Capture the return values after the window is closed
-#     if selected_date is not None and selected_time is not None:
-#         return str(selected_date) + "T" + str(selected_time) + ":00Z"
-#     else:
-#         return "No date and time selected"
-
-
+    # Get the full paths for all carpetas
+    carpeta_paths = [os.path.join(base_path, carpeta) for carpeta in carpetas]
+    
+    # Sort carpetas by creation time
+    latest_carpeta = max(carpeta_paths, key=os.path.getctime)
+    
+    return os.path.basename(latest_carpeta)
 
 if __name__ == "__main__":
     seleccionar_fecha()

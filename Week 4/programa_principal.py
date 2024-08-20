@@ -7,6 +7,7 @@ from funciones_cortas import automatico_o_manual # type: ignore
 from funciones_cortas import reportes_generales # type: ignore
 from funciones_cortas import multiples_fechas # type: ignore
 from funciones_cortas import reportes_distintos # type: ignore
+from funciones_cortas import crear_carpeta # type: ignore
 
 introduccion = "¡Hola! Puedes generar todos los reportes desde este programa. La idea es que solamente utilice números a lo largo del programa."
 
@@ -15,6 +16,7 @@ def main():
     print(introduccion)
     es_manual = automatico_o_manual()
     archivo = seleccionar_archivo()
+    crear_carpeta()
     if (es_manual):
         empresas_y_credenciales = seleccionar_empresas(archivo)
         son_multiples_fechas = multiples_fechas()
