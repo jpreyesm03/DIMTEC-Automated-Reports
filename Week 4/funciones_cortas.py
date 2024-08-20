@@ -17,26 +17,26 @@ def automatico_o_manual():
     print("\n" + """
           Existe un formato general de reporte. Desea que todas las empresas
           usen este formato predefinido? """ + "\n")
-    print("1. Escoger manualmente el contenido de cada reporte por empresa")
-    print("2. Usar el formato predefinido de reporte para todas las empresas.")
+    print("1. Usar el formato predefinido de reporte para todas las empresas.")
+    print("2. Escoger manualmente el contenido de cada reporte por empresa")
     manual = int_checker("Seleccione la opción que desee (número): ", [1, 2])
-    if manual == 1:
+    if manual == 2:
         return True
     else:
         return False
 
 def crear_carpeta(nombre_de_empresa = "", carpeta = ""):
+    dia = str("{:02}".format(datetime.now().day))
+    mes = str("{:02}".format(datetime.now().month))
+    año = str(datetime.now().year)
     if not nombre_de_empresa:
-        dia = str("{:02}".format(datetime.now().day))
-        mes = str("{:02}".format(datetime.now().month))
-        año = str(datetime.now().year)
         nombre = "Reportes_por_Empresa_" + dia + "_" + mes + "_" + año
         nombre_carpeta = definir_nombre(nombre)
         os.makedirs(nombre_carpeta)
         print_next(f"Carpeta creada: {nombre_carpeta}")
         return nombre_carpeta
     else:
-        return crear_subcarpeta(nombre_carpeta, f"Reporte_de_{nombre_de_empresa}" + dia + "_" + mes + "_" + año)
+        return crear_subcarpeta(carpeta, f"Reporte_de_{nombre_de_empresa}_" + dia + "_" + mes + "_" + año)
 
 def crear_subcarpeta(carpeta_ancestra, nombre_de_subcarpeta_ideal):
     # Get the current working directory
@@ -119,8 +119,8 @@ def fechas_correctas(fecha_inicial, fecha_final, interval_incluido = False):
 def generar_reportes(empresa, client_secret, host, access_token, client_token, fechas, listas_de_reportes, carpeta_creada):
     subcarpeta_path = crear_carpeta(nombre_de_empresa = empresa, carpeta = carpeta_creada)
     funciones_disponibles = [tabla_de_trafico_por_cpcode, tabla_trafico_total_y_estadisticas, grafica_trafico_por_dia, grafica_hits_al_origen_por_tipo_de_respuesta, tabla_hits_por_tipo, tabla_hits_por_tipo, hits_por_url]
+    print_next(f"Etapa actual: producción de tablas/gráficas. Este proceso suele tardas varios minutos por empresa: {empresa}")
     for index in listas_de_reportes:
-        print_next("Etapa actual: producción de tablas/gráficas. Este proceso suele tardas varios minutos por empresa.")
         if (index == 6):
             cpcodes = obtener_cpcodes(empresa, client_secret, host, access_token, client_token, fechas)
             for cpc in cpcodes:
@@ -134,8 +134,8 @@ def imprimir_linea_por_linea_de_lista(lista, first_time=False):
     if first_time:
         print("0. Todas las opciones")
     else:
-        print("0. Todas las opciones")
         print("-1. Ya seleccione las opciones que me interesan.")
+        print("0. Todas las opciones")
     for i in range(len(lista)):
         print(str(i + 1) + ". " + lista[i])
     print("")
@@ -235,11 +235,11 @@ def reportes_distintos():
 
 def reportes_generales(archivo, fechas, carpeta_creada):
     empresas = obtener_credenciales(archivo, extraer_todas_las_empresas(archivo))
-    
+    contador = 0
     for empresa, credenciales in empresas.items():
-        print_next("Etapa actual: producción de tablas/gráficas. Este proceso suele tardas varios minutos por empresa.")
+        print_next(f"Etapa actual: producción de tablas/gráficas. Este proceso suele tardas varios minutos por empresa: {empresa}")
         subcarpeta_path = crear_carpeta(nombre_de_empresa = empresa, carpeta = carpeta_creada)
-        cpcodes = extraer_cpcodes(empresa, credenciales[0], credenciales[1], credenciales[2], credenciales[3], fechas, subcarpeta_path)
+        cpcodes = extraer_cpcodes(empresa, credenciales[0], credenciales[1], credenciales[2], credenciales[3], fechas)
         tabla_de_trafico_por_cpcode(empresa, credenciales[0], credenciales[1], credenciales[2], credenciales[3], fechas, subcarpeta_path)
         tabla_trafico_total_y_estadisticas(empresa, credenciales[0], credenciales[1], credenciales[2], credenciales[3], fechas, subcarpeta_path)
         grafica_trafico_por_dia(empresa, credenciales[0], credenciales[1], credenciales[2], credenciales[3], fechas, subcarpeta_path)
@@ -254,7 +254,10 @@ def reportes_generales(archivo, fechas, carpeta_creada):
         except:
             print("No se detectaron cpcodes. ¿Está seguro que las credenciales de las APIs están vigentes?")
         hits_por_url(empresa, credenciales[0], credenciales[1], credenciales[2], credenciales[3], fechas, subcarpeta_path)
-        print_next(f"Todos los reportes de {empresa} fueron generados.")
+        
+        print("\n"*4 + "-"*6 + f"Reportes de {empresa} terminados" + "-"*6 + "\n"*4)
+        print("Queda(n) " + str(len(empresas) - 1 - contador) + " reporte(s) por generar." + "\n")
+        contador += 1
     
 def run_calendar_program(arg1):
     # Execute the secondary program and capture the output

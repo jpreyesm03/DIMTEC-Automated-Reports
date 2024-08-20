@@ -4,12 +4,7 @@ from akamai.edgegrid import EdgeGridAuth # type: ignore
 from urllib.parse import urljoin
 import forallpeople as si # type: ignore
 
-def dar_fechas_correctas(fecha_inicial, fecha_final, interval = False):
-    if (not interval):
-        return
-    else:
-        return
-    
+
 def extraer_cpcodes(empresa, client_secret, host, access_token, client_token, fechas):
     lista_de_cpcodes = []
     baseurl = 'https://' + host + '/'
@@ -41,28 +36,25 @@ def extraer_cpcodes(empresa, client_secret, host, access_token, client_token, fe
 
 
 def tabla_de_trafico_por_cpcode(empresa, client_secret, host, access_token, client_token, fechas, subcarpeta_path):
-    fecha_inicial, fecha_final = dar_fechas_correctas(fechas[0], fechas[1])
     return
 
 def tabla_trafico_total_y_estadisticas(empresa, client_secret, host, access_token, client_token, fechas, subcarpeta_path):
-    fecha_inicial, fecha_final = dar_fechas_correctas(fechas[0], fechas[1])
     return
 
 def grafica_trafico_por_dia(empresa, client_secret, host, access_token, client_token, fechas, subcarpeta_path):
-    fecha_inicial, fecha_final = dar_fechas_correctas(fechas[0], fechas[1])
     return
 
 def grafica_hits_al_origen_por_tipo_de_respuesta(empresa, client_secret, host, access_token, client_token, fechas, subcarpeta_path):
-    fecha_inicial, fecha_final = dar_fechas_correctas(fechas[0], fechas[1])
     return
 
 def tabla_hits_por_tipo(empresa, client_secret, host, access_token, client_token, fechas, subcarpeta_path, cpcode = "all"):
-    fecha_inicial, fecha_final = dar_fechas_correctas(fechas[0], fechas[1])
     return
 
 def hits_por_url(empresa, client_secret, host, access_token, client_token, fechas, subcarpeta_path):
-    fecha_inicial, fecha_final = dar_fechas_correctas(fechas[0], fechas[1])
     return
+
+
+
 
 def main():
     return

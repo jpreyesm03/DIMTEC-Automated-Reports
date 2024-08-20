@@ -33,8 +33,10 @@ def main():
             if (son_reportes_distintos):
                 lista_de_reportes = seleccionar_reportes(empresa)
             generar_reportes(empresa, credenciales[0], credenciales[1], credenciales[2], credenciales[3], fechas, lista_de_reportes, carpeta)
-            print("Quedan " + str(len(empresas_y_credenciales) - 1 - contador) + " reportes por generar.")
+            print("\n"*4 + "-"*6 + f"Reportes de {empresa} terminados" + "-"*6 + "\n"*4)
+            print("Queda(n) " + str(len(empresas_y_credenciales) - 1 - contador) + " reporte(s) por generar." + "\n")
             contador += 1
+
     else:
         fecha = seleccionar_fecha()
         reportes_generales(archivo, fecha, carpeta)
