@@ -27,9 +27,36 @@ def automatico_o_manual():
 def crear_folder(empresa, fechas):
     return
 
-def definir_fecha(mes):
-    fecha_inicial = ""
-    fecha_final = ""
+def definir_fecha(mes_eleccion):
+    # mes_dos_digitos = str("{:02}".format(mes))
+    año_actual = datetime.now().year
+    mes_actual = datetime.now().month
+    dia_inicial = "01"
+    dia_final = dia_inicial
+    if (mes_eleccion == mes_actual):
+        año_inicial = str(año_actual)
+        año_final = año_inicial
+        mes_inicial = str("{:02}".format(mes_actual))
+        mes_final = mes_inicial
+        dia_final = f"{datetime.now().day:02}"
+    elif (mes_eleccion < mes_actual):
+        año_inicial = str(año_actual)
+        año_final = año_inicial
+        mes_inicial = str("{:02}".format(mes_eleccion))
+        mes_final = str("{:02}".format(mes_eleccion + 1))
+    elif (mes_eleccion == 11):
+        año_inicial = str(año_actual - 1)
+        año_final = año_inicial
+        mes_inicial = "11"
+        mes_final = "12"
+    else:
+        año_inicial = str(año_actual - 1)
+        año_final = str(año_actual)
+        mes_inicial = "12"
+        mes_final = "01"
+
+    fecha_inicial = año_inicial + "-" + mes_inicial + "-" + dia_inicial + "T00:00:00Z"
+    fecha_final = año_final + "-" + mes_final + "-" + dia_final + "T00:00:00Z"
     return [fecha_inicial, fecha_final]
 
 def extraer_todas_las_empresas(file_path):
@@ -189,7 +216,17 @@ def reportes_generales(archivo, fechas):
         hits_por_url(empresa, credenciales[0], credenciales[1], credenciales[2], credenciales[3], fechas)
         print_next(f"Todos los reportes de {empresa} fueron generados.")
     
-
+def run_calendar_program(arg1):
+    # Execute the secondary program and capture the output
+    result = subprocess.run(
+        ['python', 'calendarioGUI.py', arg1],
+        capture_output=True,
+        text=True
+    )
+    # Output from the secondary program
+    # print("Output MAIN run_calendar_program:", result.stdout.strip())
+    # print("Error MAIN run_calendar_program:", result.stderr)
+    return result.stdout.strip()
 
 def seleccionar_archivo():
     print("\n" + "Abriendo ventana para seleccionar archivo...")
@@ -250,23 +287,13 @@ def seleccionar_fecha(texto_empresa = "todas las empresas"):
     else:
         print("AKAMAI solo tiene retención de 92 días.")
         fecha_inicio = run_calendar_program("")
-        print("Fecha inicial MAIN seleccionar_fechas: " + fecha_inicio)
+        print("Fecha inicial: " + fecha_inicio)
         fecha_final = run_calendar_program(str(fecha_inicio))
         print("Fecha final: " + fecha_final)
         print_next(f"La fecha inicial para {texto_empresa} es {fecha_inicio} y la final {fecha_final}")
         return [fecha_inicio, fecha_final]
     
-def run_calendar_program(arg1):
-    # Execute the secondary program and capture the output
-    result = subprocess.run(
-        ['python', 'calendarioGUI.py', arg1],
-        capture_output=True,
-        text=True
-    )
-    # Output from the secondary program
-    # print("Output MAIN run_calendar_program:", result.stdout.strip())
-    # print("Error MAIN run_calendar_program:", result.stderr)
-    return result.stdout.strip()
+
 
 
 def seleccionar_mes(empresa):
@@ -284,7 +311,7 @@ def seleccionar_mes(empresa):
             print(str(mes_numero) + ". " + mes_nombre)
     print("")
     mes = int_checker("AKAMAI retiene solo 92 días. Seleccione mes (número): ", [numeros_de_mes_mencionados[0], numeros_de_mes_mencionados[-1]])
-    return definir_fecha(meses_nombres[mes - 1])
+    return definir_fecha(mes)
 
 def seleccionar_reportes(empresa="formato general"):
     lista_de_tablas_y_graficas = [
