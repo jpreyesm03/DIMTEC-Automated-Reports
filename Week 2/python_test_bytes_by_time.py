@@ -73,9 +73,9 @@ for section in config.sections():
     name = "bytes-by-time"
     path = '/reporting-api/v1/reports/{}/versions/{}/report-data'.format(name, version)
     querystring = {
-    "start": "2024-06-01T00:00:00Z",
-    "end": "2024-07-01T00:00:00Z",
-    "interval": "DAY",
+    "start": "2024-07-16T06:00:00Z",
+    "end": "2024-08-16T06:00:00Z",
+    "interval": "FIVE_MINUTES",
     "objectIds": "all",
     "metrics": "edgeBytesTotal", # Al menos una métrica es necesaria...
     "filters": "ca=cacheable",

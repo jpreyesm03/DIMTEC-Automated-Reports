@@ -1,4 +1,4 @@
-from generador_tablas_y_graficas import extraer_cpcodes, tabla_de_trafico_por_cpcode, tabla_trafico_total_y_estadisticas, grafica_trafico_por_dia, grafica_hits_al_origen_por_tipo_de_respuesta, tabla_hits_por_tipo, hits_por_url  # type: ignore
+from generador_tablas_y_graficas import extraer_cpcodes, tabla_de_trafico_por_cpcode, tabla_trafico_total_y_estadisticas, grafica_trafico_por_dia, grafica_hits_al_origen_por_tipo_de_respuesta, tabla_hits_por_tipo, tabla_hits_por_url  # type: ignore
 import tkinter as tk
 from tkinter import filedialog
 import re
@@ -10,22 +10,25 @@ import time
 import threading
 import subprocess
 import os
+from dateutil.relativedelta import relativedelta
 
-def agregar_tiempo(fecha_a_cambiar, cambiar_seis_horas = False):
+def agregar_tiempo(fecha_a_cambiar, cambio_tiempo = "1 MES"):
     # Define the format of the input string
     formato_de_fecha = "%Y-%m-%dT%H:%M:%SZ"
     
     # Parse the input date string
     fecha = datetime.strptime(fecha_a_cambiar, formato_de_fecha)
     
-    if (cambiar_seis_horas):
+    if (cambio_tiempo == "6 HORAS"):
         # Add six hours to the date
         fecha_posterior = fecha + timedelta(hours=6)
-    else:
+    elif (cambio_tiempo == "1 DIA"):
         fecha_posterior = fecha + timedelta(days=1)
         # Set time to midnight (00:00:00)
         fecha_posterior = fecha_posterior.replace(hour=0, minute=0, second=0, microsecond=0)
-    
+    else:
+        fecha_posterior = fecha + relativedelta(months=1)
+
     # Format the result as a string
     nueva_fecha = fecha_posterior.strftime(formato_de_fecha)
     
@@ -77,7 +80,6 @@ def crear_subcarpeta(carpeta_ancestra, nombre_de_subcarpeta_ideal):
     return subcarpeta_path
 
 def definir_fecha_de_mes(mes_eleccion):
-    # mes_dos_digitos = str("{:02}".format(mes))
     año_actual = datetime.now().year
     mes_actual = datetime.now().month
     dia_inicial = "01"
@@ -149,13 +151,16 @@ def fechas_correctas_ISO_8601(fechas, interval = "NONE"):
         fecha_inicial_modificada = fecha_inicial_modificada[:14] + "00" + fecha_inicial_modificada[16:]                
         fecha_final_modificada = fecha_final_modificada[:14] + "00" + fecha_final_modificada[16:]
     else:
-        fecha_inicial_modificada = fecha_inicial_modificada[:11] + "00:00" + fecha_inicial_modificada[16:]   
-        fecha_final_modificada = agregar_tiempo(fecha_final_modificada, cambiar_seis_horas = False)
-    return [agregar_tiempo(fecha_inicial_modificada, cambiar_seis_horas = True), agregar_tiempo(fecha_final_modificada, cambiar_seis_horas = True)]
+        fecha_inicial_modificada = fecha_inicial_modificada[:11] + "00:00" + fecha_inicial_modificada[16:]
+        if (primer_fecha_mas_reciente_que_segunda_fecha(agregar_tiempo(fecha_inicial_modificada, cambio_tiempo = "1 MES"), fecha_final_modificada)):   
+            fecha_final_modificada = agregar_tiempo(fecha_inicial_modificada, cambio_tiempo = "1 MES")
+        else:
+            fecha_final_modificada = agregar_tiempo(fecha_final_modificada, cambio_tiempo = "1 DIA")
+    return [agregar_tiempo(fecha_inicial_modificada, cambio_tiempo = "6 HORAS"), agregar_tiempo(fecha_final_modificada, cambio_tiempo = "6 HORAS")]
 
 def generar_reportes(empresa, client_secret, host, access_token, client_token, fechas, listas_de_reportes, carpeta_creada):
     subcarpeta_path = crear_carpeta(nombre_de_empresa = empresa, carpeta = carpeta_creada)
-    funciones_disponibles = [tabla_de_trafico_por_cpcode, tabla_trafico_total_y_estadisticas, grafica_trafico_por_dia, grafica_hits_al_origen_por_tipo_de_respuesta, tabla_hits_por_tipo, tabla_hits_por_tipo, hits_por_url]
+    funciones_disponibles = [tabla_de_trafico_por_cpcode, tabla_trafico_total_y_estadisticas, grafica_trafico_por_dia, grafica_hits_al_origen_por_tipo_de_respuesta, tabla_hits_por_tipo, tabla_hits_por_tipo, tabla_hits_por_url]
     print_next(f"Etapa actual: producción de tablas/gráficas. Este proceso suele tardas varios minutos por empresa: {empresa}")
     for index in listas_de_reportes:
         if (index == 2):
@@ -251,6 +256,17 @@ def obtener_credenciales(archivo, empresas):
         diccionario_de_empresas[section] = [config[section]['client_secret'], config[section]['host'], config[section]['access_token'], config[section]['client_token']]
     return diccionario_de_empresas
 
+def primer_fecha_mas_reciente_que_segunda_fecha(primer_fecha, segunda_fecha):
+    formato_de_fecha = "%Y-%m-%dT%H:%M:%SZ"
+    
+    # Parse the input date strings
+    fecha_a = datetime.strptime(primer_fecha, formato_de_fecha)
+    fecha_b = datetime.strptime(segunda_fecha, formato_de_fecha)
+    
+    # Compare the two dates
+    if fecha_a > fecha_b:
+        return True
+    return False
 
 def print_next(text):
     if text == "":
@@ -281,20 +297,20 @@ def reportes_generales(archivo, fechas, carpeta_creada):
         print_next(f"Etapa actual: producción de tablas/gráficas. Este proceso suele tardas varios minutos por empresa: {empresa}")
         subcarpeta_path = crear_carpeta(nombre_de_empresa = empresa, carpeta = carpeta_creada)
         cpcodes = extraer_cpcodes(empresa, credenciales[0], credenciales[1], credenciales[2], credenciales[3], fechas_correctas_ISO_8601(fechas, interval = "NONE"))
-        tabla_de_trafico_por_cpcode(empresa, credenciales[0], credenciales[1], credenciales[2], credenciales[3], fechas_correctas_ISO_8601(fechas, interval = "NONE"), subcarpeta_path)
-        tabla_trafico_total_y_estadisticas(empresa, credenciales[0], credenciales[1], credenciales[2], credenciales[3], fechas_correctas_ISO_8601(fechas, interval = "FIVE_MINUTES"), subcarpeta_path)
-        grafica_trafico_por_dia(empresa, credenciales[0], credenciales[1], credenciales[2], credenciales[3], fechas_correctas_ISO_8601(fechas, interval = "NONE"), subcarpeta_path)
-        grafica_hits_al_origen_por_tipo_de_respuesta(empresa, credenciales[0], credenciales[1], credenciales[2], credenciales[3], fechas_correctas_ISO_8601(fechas, interval = "HOUR"), subcarpeta_path)
-        tabla_hits_por_tipo(empresa, credenciales[0], credenciales[1], credenciales[2], credenciales[3], fechas_correctas_ISO_8601(fechas, interval = "NONE"), subcarpeta_path)
+        print(tabla_de_trafico_por_cpcode(empresa, credenciales[0], credenciales[1], credenciales[2], credenciales[3], fechas_correctas_ISO_8601(fechas, interval = "NONE"), subcarpeta_path))
+        print(tabla_trafico_total_y_estadisticas(empresa, credenciales[0], credenciales[1], credenciales[2], credenciales[3], fechas_correctas_ISO_8601(fechas, interval = "FIVE_MINUTES"), subcarpeta_path))
+        print(grafica_trafico_por_dia(empresa, credenciales[0], credenciales[1], credenciales[2], credenciales[3], fechas_correctas_ISO_8601(fechas, interval = "NONE"), subcarpeta_path))
+        print(grafica_hits_al_origen_por_tipo_de_respuesta(empresa, credenciales[0], credenciales[1], credenciales[2], credenciales[3], fechas_correctas_ISO_8601(fechas, interval = "HOUR"), subcarpeta_path))
+        print(tabla_hits_por_tipo(empresa, credenciales[0], credenciales[1], credenciales[2], credenciales[3], fechas_correctas_ISO_8601(fechas, interval = "NONE"), subcarpeta_path))
         try:
             for i in range(len(cpcodes)):
                 if (i < 3):
-                    tabla_hits_por_tipo(empresa, credenciales[0], credenciales[1], credenciales[2], credenciales[3], fechas_correctas_ISO_8601(fechas, interval = "NONE"), subcarpeta_path, cpcodes[i].split()[-1].strip('()'))
+                    print(tabla_hits_por_tipo(empresa, credenciales[0], credenciales[1], credenciales[2], credenciales[3], fechas_correctas_ISO_8601(fechas, interval = "NONE"), subcarpeta_path, cpcodes[i].split()[-1].strip('()')))
                 else:
                     break
         except:
             print("No se detectaron cpcodes. ¿Está seguro que las credenciales de las APIs están vigentes?")
-        hits_por_url(empresa, credenciales[0], credenciales[1], credenciales[2], credenciales[3], fechas_correctas_ISO_8601(fechas, interval = "NONE"), subcarpeta_path)
+        print(tabla_hits_por_url(empresa, credenciales[0], credenciales[1], credenciales[2], credenciales[3], fechas_correctas_ISO_8601(fechas, interval = "NONE"), subcarpeta_path))
         
         print("\n"*4 + "-"*6 + f"Reportes de {empresa} terminados" + "-"*6 + "\n"*4)
         print("Queda(n) " + str(len(empresas) - 1 - contador) + " reporte(s) por generar." + "\n")
@@ -357,7 +373,7 @@ def seleccionar_fecha(texto_empresa = "todas las empresas"):
     respuesta = int_checker("Seleccione una opción (número): ", [1,2])
     print("")
     if respuesta == 1:
-        seleccionar_mes(texto_empresa)
+        return seleccionar_mes(texto_empresa)
     else:
         print("AKAMAI solo tiene retención de 92 días.")
         fecha_inicio = correr_programa_subproceso("")

@@ -76,8 +76,8 @@ for section in config.sections():
     name = "traffic-by-timeandresponseclass"
     path = '/reporting-api/v1/reports/{}/versions/{}/report-data'.format(name, version)
     querystring = {
-    "start": "2024-07-01T05:00:00Z",
-    "end": "2024-07-03T03:00:00Z",
+    "start": "2024-05-23T05:00:00Z",
+    "end": "2024-08-18T03:00:00Z",
     "interval": "HOUR",
     "objectIds": "all",
     "metrics": "originHitsPerSecond", # Al menos una métrica es necesaria...
@@ -90,7 +90,7 @@ for section in config.sections():
     print(f"Status Code: {result.status_code}")
     mes = find_month(querystring.get("start"))
     response_json = result.json()
-    print(f"Response JSON: {json.dumps(response_json, indent=2)}")
+    # print(f"Response JSON: {json.dumps(response_json, indent=2)}")
     data = response_json.get('data', [])
     length = len(data)
     values_dictionary = {

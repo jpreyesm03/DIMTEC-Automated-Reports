@@ -8,15 +8,10 @@ import pandas as pd # type: ignore
 import json
 from datetime import datetime
 import locale
-import numpy as np # type: ignore
-import matplotlib.pyplot as plt # type: ignore
-from matplotlib.ticker import FuncFormatter # type: ignore
-import os
-    
 
 
 def pretty_printer(final_name, off, ebt, mbt, obt):
-    list_result = [final_name, off]
+    list_result = [final_name, str(off)+" %"]
     new_ebt = str(round(int(ebt)*si.A,2))
     new_mbt = str(round(int(mbt)*si.A,2))
     new_obt = str(round(int(obt)*si.A,2))
@@ -32,27 +27,6 @@ def sort_file(file, column):
     sorted_df = df.sort_values(by=sort_column, ascending=False)
     sorted_df = sorted_df.drop(columns=[sort_column])
     sorted_df.to_csv(file, index=False)
-
-def find_month(text_month):
-    # Store the current locale
-    current_locale = locale.getlocale(locale.LC_TIME)
-    
-    try:
-        # Set the locale to Spanish
-        locale.setlocale(locale.LC_TIME, "es_ES.UTF-8")
-        # Parse the date string into a datetime object
-        date_obj = datetime.strptime(text_month, "%Y-%m-%dT%H:%M:%SZ")
-        # Extract the month name in Spanish and convert to lowercase
-        month_name = date_obj.strftime("%B").lower()
-        # Extract the last two digits of the year
-        year = date_obj.strftime("%y")
-        # Combine month name and year
-        month_year = f"{month_name}{year}"
-    finally:
-        # Restore the previous locale
-        locale.setlocale(locale.LC_TIME, current_locale)
-    
-    return month_year
 
 # Parse the .edgerc file
 config = configparser.ConfigParser()
@@ -74,45 +48,38 @@ for section in config.sections():
         access_token=access_token
     )
     version = "1"
-    name = "bytes-by-time"
+    name = "bytes-by-cpcode"
     path = '/reporting-api/v1/reports/{}/versions/{}/report-data'.format(name, version)
     querystring = {
-    "start": "2024-07-01T06:00:00Z",
-    "end": "2024-08-01T06:00:00Z",
-    "interval": "FIVE_MINUTES",
+    "start": "2024-06-01T06:00:00Z",
+    "end": "2024-07-01T06:00:00Z",
     "objectIds": "all",
-    "metrics": "bytesOffload, bytesOffloadAvg, bytesOffloadMax, bytesOffloadMin, edgeBitsPerSecond, edgeBitsPerSecondMax, edgeBitsPerSecondMin, edgeBytesTotal, midgressBitsPerSecond, midgressBitsPerSecondMax, midgressBitsPerSecondMin, midgressBytesTotal, originBitsPerSecond, originBitsPerSecondMax, originBitsPerSecondMin, originBytesTotal", # Al menos una métrica es necesaria...
+    "metrics": "bytesOffload, edgeBytes, midgressBytes, originBytes", 
     "filters": "ca=cacheable",
     }
     result = s.get(urljoin(baseurl, path), params=querystring)
     print(f"Configuration: {section}")
     print(f"Status Code: {result.status_code}")
-    mes = find_month(querystring.get("start"))
+    
     response_json = result.json()
-    # print(f"Response JSON: {json.dumps(response_json, indent=2)}")
-    summary_stats = response_json.get('summaryStatistics', [])
-    columnas = ["", "Offload", "Edge", "Midgress", "Origin"]
-    total = ["Total", f"{float(summary_stats.get("bytesOffloadAvg").get("value")):.2f} %", f"{str(round(int(float(summary_stats.get("edgeBytesTotal").get("value")))*si.A,2)).replace("A", "B")}", f"{str(round(int(float(summary_stats.get("midgressBytesTotal").get("value")))*si.A,2)).replace("A", "B")}/s", f"{str(round(int(float(summary_stats.get("originBytesTotal").get("value")))*si.A,2)).replace("A", "B")}/s"]
-    minimos = ["Minimo", f"{float(summary_stats.get("bytesOffloadMin").get("value")):.2f} %", f"{str(round(int(float(summary_stats.get("edgeBitsPerSecondMin").get("value")))*si.A,2)).replace("A", "B")}/s", f"{str(round(int(float(summary_stats.get("midgressBitsPerSecondMin").get("value")))*si.A,2)).replace("A", "B")}/s", f"{str(round(int(float(summary_stats.get("originBitsPerSecondMin").get("value")))*si.A,2)).replace("A", "B")}/s"]
-    maximos = ["Maximo", f"{float(summary_stats.get("bytesOffloadMax").get("value")):.2f} %", f"{str(round(int(float(summary_stats.get("edgeBitsPerSecondMax").get("value")))*si.A,2)).replace("A", "B")}/s", f"{str(round(int(float(summary_stats.get("midgressBitsPerSecondMax").get("value")))*si.A,2)).replace("A", "B")}/s", f"{str(round(int(float(summary_stats.get("originBitsPerSecondMax").get("value")))*si.A,2)).replace("A", "B")}/s"]
-    # Define the file name as 'grafica_JP'
-    file_name = f"tabla_trafico_total_y_estadisticas_{section}.csv"
-    subcarpeta = "C:/Users/jprey/OneDrive/Escritorio/JP/DIMTEC/Week 4"
-    
-    # Combine the file path and file name
-    csv_ubicacion = os.path.join(subcarpeta, file_name)
-    
-    
-    # Write the CSV file
-    with open(csv_ubicacion, mode='w', newline='') as file:
+    data = response_json.get('data')
+    # Define the CSV file name
+    csv_file = f'report_{section}_bytes_by_cpcode.csv'
+    with open(csv_file, mode='w', newline='') as file:
         writer = csv.writer(file)
-        writer.writerow(columnas)
-        writer.writerow(total)
-        writer.writerow(minimos)
-        writer.writerow(maximos)
-    
-    
-    print("\n"*4 + "-"*10 + section + "-"*10 + "\n"*4)
-    break
-    
+        header = ['CpCodeId', 'Offload Percentage', 'Edge Bytes', 'Midgress Bytes', 'Origin Bytes', 'sortingColumn']
+        writer.writerow(header)
+        for credential in data:
+            print(credential)
+            cpcode = credential.get('cpcode')
+            specific_cpcode = s.get(urljoin(baseurl, '/cprg/v1/cpcodes/'+cpcode)).json()
+            name = specific_cpcode.get('cpcodeName')
+            final_name = name + " (" + cpcode + ")"
+            print(cpcode, " JP: ", credential.get('bytesOffload'))
+            # Write the values
+            if data:
+                writer.writerow(pretty_printer(final_name, credential.get('bytesOffload'), credential.get('edgeBytes'), credential.get('midgressBytes'), credential.get('originBytes')))     
+        print(f"Data saved to {csv_file}")
+        print("\n" + "-"*40 + "\n")
+    sort_file(csv_file, "sortingColumn")
     
