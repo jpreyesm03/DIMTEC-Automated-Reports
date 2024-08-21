@@ -13,21 +13,6 @@ import numpy as np # type: ignore
 import matplotlib.pyplot as plt # type: ignore
 from matplotlib.ticker import FuncFormatter # type: ignore
 
-def formatear_fechas(fecha1, fecha2):
-    # Diccionario para traducir los meses al español
-    meses_es = {
-        1: "Ene", 2: "Feb", 3: "Mar", 4: "Abr", 5: "May", 6: "Jun",
-        7: "Jul", 8: "Ago", 9: "Sep", 10: "Oct", 11: "Nov", 12: "Dic"
-    }
-    # Convertir los textos a objetos datetime
-    dt1 = datetime.strptime(fecha1, "%Y-%m-%dT%H:%M:%SZ")
-    dt2 = datetime.strptime(fecha2, "%Y-%m-%dT%H:%M:%SZ")
-    # Formatear las fechas
-    fecha1_formateada = f"{dt1.day:02d}{meses_es[dt1.month]}{str(dt1.year)[-2:]}"
-    fecha2_formateada = f"{dt2.day:02d}{meses_es[dt2.month]}{str(dt2.year)[-2:]}"
-    # Retornar la cadena con el formato requerido
-    return f"{fecha1_formateada}-{fecha2_formateada}"
-
 def extraer_cpcodes(empresa, client_secret, host, access_token, client_token, fechas):
     lista_de_cpcodes = []
     baseurl = 'https://' + host + '/'
@@ -58,7 +43,7 @@ def extraer_cpcodes(empresa, client_secret, host, access_token, client_token, fe
 
 
 
-def tabla_de_trafico_por_cpcode(empresa, client_secret, host, access_token, client_token, fechas, subcarpeta_path):
+def tabla_de_trafico_por_cpcode(empresa, client_secret, host, access_token, client_token, fechas, subcarpeta_path, fecha_correcta_nombre):
     
     def pretty_printer(final_name, off, ebt, mbt, obt):
         list_result = [final_name, str(off)+" %"]
@@ -100,7 +85,7 @@ def tabla_de_trafico_por_cpcode(empresa, client_secret, host, access_token, clie
     response_json = result.json()
     data = response_json.get('data')
     # Define the CSV file name
-    nombre_de_archivo = f"tabla_de_trafico_por_cpcode_{empresa}_{formatear_fechas(fechas[0], fechas[1])}.csv"
+    nombre_de_archivo = f"tabla_de_trafico_por_cpcode_{empresa}_{fecha_correcta_nombre}.csv"
     
     csv_ubicacion = os.path.join(subcarpeta_path, nombre_de_archivo)
     with open(csv_ubicacion, mode='w', newline='') as file:
@@ -119,7 +104,7 @@ def tabla_de_trafico_por_cpcode(empresa, client_secret, host, access_token, clie
     
     return f"--{nombre_de_archivo} creado--"
 
-def tabla_trafico_total_y_estadisticas(empresa, client_secret, host, access_token, client_token, fechas, subcarpeta_path):
+def tabla_trafico_total_y_estadisticas(empresa, client_secret, host, access_token, client_token, fechas, subcarpeta_path, fecha_correcta_nombre):
     baseurl = 'https://' + host + '/'  # this is the "host" value from your credentials file
     s = requests.Session()
     s.auth = EdgeGridAuth(
@@ -148,7 +133,7 @@ def tabla_trafico_total_y_estadisticas(empresa, client_secret, host, access_toke
     minimos = ["Minimo", f"{float(summary_stats.get("bytesOffloadMin").get("value")):.2f} %", f"{str(round(int(float(summary_stats.get("edgeBitsPerSecondMin").get("value")))*si.A,2)).replace("A", "B")}/s", f"{str(round(int(float(summary_stats.get("midgressBitsPerSecondMin").get("value")))*si.A,2)).replace("A", "B")}/s", f"{str(round(int(float(summary_stats.get("originBitsPerSecondMin").get("value")))*si.A,2)).replace("A", "B")}/s"]
     maximos = ["Maximo", f"{float(summary_stats.get("bytesOffloadMax").get("value")):.2f} %", f"{str(round(int(float(summary_stats.get("edgeBitsPerSecondMax").get("value")))*si.A,2)).replace("A", "B")}/s", f"{str(round(int(float(summary_stats.get("midgressBitsPerSecondMax").get("value")))*si.A,2)).replace("A", "B")}/s", f"{str(round(int(float(summary_stats.get("originBitsPerSecondMax").get("value")))*si.A,2)).replace("A", "B")}/s"]
     # Define the file name as 'grafica_JP'
-    nombre_de_archivo = f"tabla_trafico_total_y_estaditicas_{empresa}_{formatear_fechas(fechas[0], fechas[1])}.csv"
+    nombre_de_archivo = f"tabla_trafico_total_y_estaditicas_{empresa}_{fecha_correcta_nombre}.csv"
     # Combine the file path and file name
     csv_ubicacion = os.path.join(subcarpeta_path, nombre_de_archivo)
     # Write the CSV file
@@ -160,7 +145,7 @@ def tabla_trafico_total_y_estadisticas(empresa, client_secret, host, access_toke
         writer.writerow(maximos)
     return f"--{nombre_de_archivo} creado--"
 
-def grafica_trafico_por_dia(empresa, client_secret, host, access_token, client_token, fechas, subcarpeta_path):
+def grafica_trafico_por_dia(empresa, client_secret, host, access_token, client_token, fechas, subcarpeta_path, fecha_correcta_nombre):
     baseurl = 'https://' + host + '/'  # this is the "host" value from your credentials file
     s = requests.Session()
     s.auth = EdgeGridAuth(
@@ -245,13 +230,13 @@ def grafica_trafico_por_dia(empresa, client_secret, host, access_token, client_t
     ax2.yaxis.set_major_formatter(FuncFormatter(lambda x, pos: f'{int(x)}%'))
 
      # Save the figure
-    nombre_de_archivo = f"Grafica_Trafico_Por_Dia_{empresa}_{formatear_fechas(fechas[0], fechas[1])}.png"
+    nombre_de_archivo = f"Grafica_Trafico_Por_Dia_{empresa}_{fecha_correcta_nombre}.png"
     file_path = os.path.join(subcarpeta_path, nombre_de_archivo)
     plt.savefig(file_path)
     plt.close(fig)
     return f"--{nombre_de_archivo} creado--"
 
-def grafica_hits_al_origen_por_tipo_de_respuesta(empresa, client_secret, host, access_token, client_token, fechas, subcarpeta_path):
+def grafica_hits_al_origen_por_tipo_de_respuesta(empresa, client_secret, host, access_token, client_token, fechas, subcarpeta_path, fecha_correcta_nombre):
     baseurl = 'https://' + host + '/'  # this is the "host" value from your credentials file
     s = requests.Session()
     s.auth = EdgeGridAuth(
@@ -328,14 +313,14 @@ def grafica_hits_al_origen_por_tipo_de_respuesta(empresa, client_secret, host, a
 
     ax1.yaxis.set_major_formatter(FuncFormatter(lambda x, pos: f'{int(x)}.00')) 
 
-    nombre_de_archivo = f"Grafica_de_Hits_al_Origen_al_Tipo_de_respuesta_{empresa}_{formatear_fechas(fechas[0], fechas[1])}.png"
+    nombre_de_archivo = f"Grafica_de_Hits_al_Origen_al_Tipo_de_respuesta_{empresa}_{fecha_correcta_nombre}.png"
     file_path = os.path.join(subcarpeta_path, nombre_de_archivo)
     plt.savefig(file_path)
     plt.close(fig)
 
     return f"--{nombre_de_archivo} creado--"
 
-def tabla_hits_por_tipo(empresa, client_secret, host, access_token, client_token, fechas, subcarpeta_path, cpcode = "all"):
+def tabla_hits_por_tipo(empresa, client_secret, host, access_token, client_token, fechas, subcarpeta_path, fecha_correcta_nombre, cpcode = "all"):
     
     def pretty_printer(row):
         new_row = [row[0]]
@@ -359,10 +344,10 @@ def tabla_hits_por_tipo(empresa, client_secret, host, access_token, client_token
         final_df.to_csv(file, index=False)
     
     if (cpcode == "all"):
-        nombre_de_archivo = f"tabla_hits_por_tipo_{empresa}_{formatear_fechas(fechas[0], fechas[1])}.csv"
+        nombre_de_archivo = f"tabla_hits_por_tipo_{empresa}_{fecha_correcta_nombre}.csv"
         columnaCSV = 'Tipo de Respuesta'
     else:
-        nombre_de_archivo = f"tabla_hits_por_tipo_{empresa}_{cpcode}_{formatear_fechas(fechas[0], fechas[1])}.csv"
+        nombre_de_archivo = f"tabla_hits_por_tipo_{empresa}_{cpcode}_{fecha_correcta_nombre}.csv"
         columnaCSV = f"Tipo de Respuesta ({cpcode})"
     baseurl = 'https://' + host + '/'  # this is the "host" value from your credentials file
     s = requests.Session()
@@ -398,7 +383,7 @@ def tabla_hits_por_tipo(empresa, client_secret, host, access_token, client_token
     sort_file(csv_ubicacion, "Edge Hits")
     return f"--{nombre_de_archivo} creado--"
 
-def tabla_hits_por_url(empresa, client_secret, host, access_token, client_token, fechas, subcarpeta_path):
+def tabla_hits_por_url(empresa, client_secret, host, access_token, client_token, fechas, subcarpeta_path, fecha_correcta_nombre):
     def pretty_printer(row):
         new_row = [row[0]]
         for value in row[1:]:
@@ -444,7 +429,7 @@ def tabla_hits_por_url(empresa, client_secret, host, access_token, client_token,
     response_json = result.json()
     # print(f"Response JSON: {json.dumps(response_json, indent=2)}")
     data = response_json.get('data')
-    nombre_de_archivo = f"tabla_hits_por_URL_{empresa}_{formatear_fechas(fechas[0], fechas[1])}.csv"
+    nombre_de_archivo = f"tabla_hits_por_URL_{empresa}_{fecha_correcta_nombre}.csv"
     csv_ubicacion = os.path.join(subcarpeta_path, nombre_de_archivo)
     with open(csv_ubicacion, mode='w', newline='') as file:
         writer = csv.writer(file)
