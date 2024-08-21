@@ -176,11 +176,11 @@ def formatear_fechas(fecha1, fecha2):
 def generar_reportes(empresa, client_secret, host, access_token, client_token, fechas, listas_de_reportes, carpeta_creada):
     subcarpeta_path = crear_carpeta(nombre_de_empresa = empresa, carpeta = carpeta_creada, fechas_para_el_titulo = fechas)
     funciones_disponibles = [tabla_de_trafico_por_cpcode, tabla_trafico_total_y_estadisticas, grafica_trafico_por_dia, grafica_hits_al_origen_por_tipo_de_respuesta, tabla_hits_por_tipo, tabla_hits_por_tipo, tabla_hits_por_url]
-    print_next(f"Etapa actual: producción de tablas/gráficas. Este proceso suele tardas varios minutos por empresa: {empresa}")
+    print_next(f"Etapa actual: producción de tablas/gráficas. Este proceso suele tardar varios minutos por empresa: {empresa}")
     for index in listas_de_reportes:
         if (index == 2):
             funciones_disponibles[index-1](empresa, client_secret, host, access_token, client_token, fechas_correctas_ISO_8601(fechas, interval = "FIVE_MINUTES"), subcarpeta_path, formatear_fechas(fechas[0], fechas[1]))
-        elif (index == 4):
+        elif (index == 3 or index == 4):
             funciones_disponibles[index-1](empresa, client_secret, host, access_token, client_token, fechas_correctas_ISO_8601(fechas, interval = "HOUR"), subcarpeta_path, formatear_fechas(fechas[0], fechas[1]))
         elif (index == 6):
             cpcodes = obtener_cpcodes(empresa, client_secret, host, access_token, client_token, fechas_correctas_ISO_8601(fechas, interval = "NONE"))
@@ -309,12 +309,12 @@ def reportes_generales(archivo, fechas, carpeta_creada):
     empresas = obtener_credenciales(archivo, extraer_todas_las_empresas(archivo))
     contador = 0
     for empresa, credenciales in empresas.items():
-        print_next(f"Etapa actual: producción de tablas/gráficas. Este proceso suele tardas varios minutos por empresa: {empresa}")
+        print_next(f"Etapa actual: producción de tablas/gráficas. Este proceso suele tardar varios minutos por empresa: {empresa}")
         subcarpeta_path = crear_carpeta(nombre_de_empresa = empresa, carpeta = carpeta_creada, fechas_para_el_titulo = fechas)
         cpcodes = extraer_cpcodes(empresa, credenciales[0], credenciales[1], credenciales[2], credenciales[3], fechas_correctas_ISO_8601(fechas, interval = "NONE"))
         print(tabla_de_trafico_por_cpcode(empresa, credenciales[0], credenciales[1], credenciales[2], credenciales[3], fechas_correctas_ISO_8601(fechas, interval = "NONE"), subcarpeta_path, formatear_fechas(fechas[0], fechas[1])))
         print(tabla_trafico_total_y_estadisticas(empresa, credenciales[0], credenciales[1], credenciales[2], credenciales[3], fechas_correctas_ISO_8601(fechas, interval = "FIVE_MINUTES"), subcarpeta_path, formatear_fechas(fechas[0], fechas[1])))
-        print(grafica_trafico_por_dia(empresa, credenciales[0], credenciales[1], credenciales[2], credenciales[3], fechas_correctas_ISO_8601(fechas, interval = "NONE"), subcarpeta_path, formatear_fechas(fechas[0], fechas[1])))
+        print(grafica_trafico_por_dia(empresa, credenciales[0], credenciales[1], credenciales[2], credenciales[3], fechas_correctas_ISO_8601(fechas, interval = "HOUR"), subcarpeta_path, formatear_fechas(fechas[0], fechas[1])))
         print(grafica_hits_al_origen_por_tipo_de_respuesta(empresa, credenciales[0], credenciales[1], credenciales[2], credenciales[3], fechas_correctas_ISO_8601(fechas, interval = "HOUR"), subcarpeta_path, formatear_fechas(fechas[0], fechas[1])))
         print(tabla_hits_por_tipo(empresa, credenciales[0], credenciales[1], credenciales[2], credenciales[3], fechas_correctas_ISO_8601(fechas, interval = "NONE"), subcarpeta_path, formatear_fechas(fechas[0], fechas[1])))
         try:
