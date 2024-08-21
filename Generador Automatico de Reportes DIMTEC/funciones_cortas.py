@@ -4,10 +4,8 @@ from tkinter import filedialog
 import re
 import configparser
 import tkinter as tk
-from tkcalendar import DateEntry  # type: ignore
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 import time
-import threading
 import subprocess
 import os
 from dateutil.relativedelta import relativedelta
@@ -72,7 +70,7 @@ def crear_carpeta(nombre_de_empresa = "", carpeta = "", fechas_para_el_titulo = 
         nombre = "Reportes_por_Empresa_" + dia + "_" + mes + "_" + año # Nombre de la carpeta tentativo
         nombre_carpeta = definir_nombre(nombre) # Asegurarse de que el nombre no exista
         os.makedirs(nombre_carpeta) # Hacer carpeta
-        print_next(f"Carpeta creada: {nombre_carpeta}")
+        imprimir_con_formato_establecido(f"Carpeta creada: {nombre_carpeta}")
         return nombre_carpeta
     else:   # Si sí se pasaron argumentos, entonces crear subcarpeta
         # El segundo parámetro contempla la función formatear_fechas que regresa las fechas en formato "13Ago24-06Sep24"
@@ -90,7 +88,7 @@ def crear_subcarpeta(carpeta_ancestra, nombre_de_subcarpeta_ideal):
     
     # Crear subcarpeta
     os.makedirs(subcarpeta_path)
-    print_next(f"Subcarpeta creada: {subcarpeta_path}")
+    imprimir_con_formato_establecido(f"Subcarpeta creada: {subcarpeta_path}")
     return subcarpeta_path
 
 def definir_fecha_de_mes(mes_eleccion):
@@ -214,7 +212,7 @@ def generar_reportes(empresa, client_secret, host, access_token, client_token, f
     
     # Lista de funciones disponibles del archivo generador_tablas_y_graficas.py
     funciones_disponibles = [tabla_de_trafico_por_cpcode, tabla_trafico_total_y_estadisticas, grafica_trafico_por_dia, grafica_hits_al_origen_por_tipo_de_respuesta, tabla_hits_por_tipo, tabla_hits_por_tipo, tabla_hits_por_url]
-    print_next(f"Etapa actual: producción de tablas/gráficas. Este proceso suele tardar varios minutos por empresa: {empresa}")
+    imprimir_con_formato_establecido(f"Etapa actual: producción de tablas/gráficas. Este proceso suele tardar varios minutos por empresa: {empresa}")
     
     for index in listas_de_reportes:
         if (index == 2): # La tabla 2 tiene ciertas limitaciones para el tipo de fecha, por eso se checa el caso en particular
@@ -310,7 +308,7 @@ def obtener_cpcodes(empresa, client_secret, host, access_token, client_token, fe
     
     while (eleccion != -1):     # Ciclo que pide cpcodes mientras que el usuario no registre -1
         if (eleccion == 0):
-            print_next("Ha seleccionado todos los cpcodes")
+            imprimir_con_formato_establecido("Ha seleccionado todos los cpcodes")
             return cpcodes_list
         
         elif (cpcodes_list[eleccion-1].split()[-1].strip('()') in mis_cpcodes):
@@ -323,7 +321,7 @@ def obtener_cpcodes(empresa, client_secret, host, access_token, client_token, fe
             mis_cpcodes.append(cpcodes_list[eleccion-1].split()[-1].strip('()'))
 
             if (len(mis_cpcodes) == len(cpcodes_list)): # Si la lista elegida es igual de grande a la lista original de cpcodes
-                print_next("Ha seleccionado todos los cpcodes")
+                imprimir_con_formato_establecido("Ha seleccionado todos los cpcodes")
                 return mis_cpcodes # return la lista elegida para que el orden preferido prevalezca
         # Imprimir las cpcodes y repetir el ciclo    
         imprimir_linea_por_linea_de_lista(cpcodes_list, primera_vez = False)
@@ -355,7 +353,7 @@ def primer_fecha_mas_reciente_que_segunda_fecha(primer_fecha, segunda_fecha):
     
     return False
 
-def print_next(text):
+def imprimir_con_formato_establecido(text):
     # Función útil para darle buen formato a la consola. \n es como picarle "enter".
     if text == "":
         print("\n" * 1 + "-" * 40 + "\n" * 1)
@@ -384,7 +382,7 @@ def reportes_generales(archivo, fechas, carpeta_creada):
     contador = 0 # Para determinar para cuántas empresas todavía hay que generar reportes
 
     for empresa, credenciales in empresas.items(): # Para generar reportes por empresa
-        print_next(f"Etapa actual: producción de tablas/gráficas. Este proceso suele tardar varios minutos por empresa: {empresa}")
+        imprimir_con_formato_establecido(f"Etapa actual: producción de tablas/gráficas. Este proceso suele tardar varios minutos por empresa: {empresa}")
         # Crea subcarpeta para almacenar todos los reportes de la empresa en cuestión
         subcarpeta_path = crear_carpeta(nombre_de_empresa = empresa, carpeta = carpeta_creada, fechas_para_el_titulo = fechas)
         
@@ -427,7 +425,7 @@ def seleccionar_archivo():
     )
 
     # return dirección del archivo
-    print_next(direccion_de_archivo)
+    imprimir_con_formato_establecido(direccion_de_archivo)
     return direccion_de_archivo
 
 
@@ -443,7 +441,7 @@ def seleccionar_empresas(archivo):
 
     while (eleccion != -1):
         if eleccion == 0: # Si selecciona todas:
-            print_next("Ha seleccionado todas las empresas")
+            imprimir_con_formato_establecido("Ha seleccionado todas las empresas")
             return obtener_credenciales(archivo, empresas)
         
         elif empresas[eleccion - 1] in empresas_escogidas: # Si la empresa elegida ya había sido elegida:
@@ -454,7 +452,7 @@ def seleccionar_empresas(archivo):
             # Agregar nueva empresa
             empresas_escogidas.append(empresas[eleccion - 1])
             if (len(empresas_escogidas) == len(empresas)): # Si la lista de empresas elegidas es del mismo tamaño que la original:
-                print_next("Ha seleccionado todas las empresas")
+                imprimir_con_formato_establecido("Ha seleccionado todas las empresas")
                 return obtener_credenciales(archivo, empresas_escogidas)
 
         # El ciclo sigue y se imprimen nuevamente las empresas disponibles        
@@ -465,7 +463,7 @@ def seleccionar_empresas(archivo):
     print("Has seleccionado: ", end="")
     for emp in empresas_escogidas:
         print(emp, end=', ')
-    print_next("")
+    imprimir_con_formato_establecido("")
     return obtener_credenciales(archivo, empresas_escogidas)
 
 
@@ -485,7 +483,7 @@ def seleccionar_fecha(texto_empresa = "todas las empresas"):
         print("Fecha inicial: " + fecha_inicio)
         fecha_final = correr_programa_subproceso(str(fecha_inicio)) # Lanza GUI nuevamente para la fecha final
         print("Fecha final: " + fecha_final)
-        print_next(f"La fecha inicial para {texto_empresa} es {fecha_inicio} y la final {fecha_final}")
+        imprimir_con_formato_establecido(f"La fecha inicial para {texto_empresa} es {fecha_inicio} y la final {fecha_final}")
         return [fecha_inicio, fecha_final]
     
 
@@ -533,7 +531,7 @@ def seleccionar_reportes(empresa="formato general"):
     
     while (eleccion != -1):
         if (eleccion == 0): # Si seleccionó todas:
-            print_next("Ha seleccionado todas las tablas/gráficas")
+            imprimir_con_formato_establecido("Ha seleccionado todas las tablas/gráficas")
             return [1,2,3,4,5,6,7]
         
         elif (eleccion in números_elegidos): # Si seleccionó una tabla/gráfica que ya había elegido
@@ -543,7 +541,7 @@ def seleccionar_reportes(empresa="formato general"):
             # Agregar tabla/gráfica
             números_elegidos.append(eleccion)
             if (len(números_elegidos) == 7): # Si selecciona todas las tablas/gráficas una por una.
-                print_next("Ha seleccionado todas las tablas/gráficas")
+                imprimir_con_formato_establecido("Ha seleccionado todas las tablas/gráficas")
                 return números_elegidos
         
         # Sigue el ciclo y vuelve a imprimir las opciones
@@ -552,6 +550,5 @@ def seleccionar_reportes(empresa="formato general"):
     
     return números_elegidos
 
-if __name__ == "__main__":
-    seleccionar_fecha()
+if __name__ == "__main__": # Se asegura de que las funciones puedan ser importadas sin problema.
     main()
