@@ -13,10 +13,10 @@ import os
 from dateutil.relativedelta import relativedelta
 
 def agregar_tiempo(fecha_a_cambiar, cambio_tiempo = "1 MES"):
-    # Define the format of the input string
+    # Definir un formato de fecha acorde al ISO 8601
     formato_de_fecha = "%Y-%m-%dT%H:%M:%SZ"
     
-    # Parse the input date string
+    # Cambiar el tipo de formato a Data
     fecha = datetime.strptime(fecha_a_cambiar, formato_de_fecha)
     
     if (cambio_tiempo == "6 HORAS"):
