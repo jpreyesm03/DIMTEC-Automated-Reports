@@ -1,4 +1,3 @@
-import configparser
 import csv
 import requests # type: ignore
 from akamai.edgegrid import EdgeGridAuth # type: ignore
