@@ -7,7 +7,10 @@ import os
 import pandas as pd # type: ignore
 import numpy as np # type: ignore
 import matplotlib.pyplot as plt # type: ignore
-from matplotlib.ticker import FuncFormatter # type: ignore
+from matplotlib.ticker import FuncFormatter, MaxNLocator # type: ignore
+import matplotlib.dates as mdates
+from datetime import datetime, timedelta
+import locale
 
 def extraer_cpcodes(empresa, client_secret, host, access_token, client_token, fechas):
     lista_de_cpcodes = []
@@ -50,7 +53,7 @@ def extraer_cpcodes(empresa, client_secret, host, access_token, client_token, fe
 # Genera Tabla de Tráfico por CPcode, ordenado por orden descendiente de Bytes de Edge
 def tabla_de_trafico_por_cpcode(empresa, client_secret, host, access_token, client_token, fechas, subcarpeta_path, fecha_correcta_nombre):
     
-    # Formatea los valores de acuerdo a la convención de DIMTEC
+    # Formatea los valores de acuerdo a la convención de DIMTEC para este tipo de tabla
     def formatear_valores(nombre_de_cpcode_formateado, OffloadBytes, edge_bytes_total, midgress_bytes_total, origin_bytes_total):
         lista_formateada = [nombre_de_cpcode_formateado, str(OffloadBytes)+" %"] # Coloca el símbolo de personaje
         
@@ -174,6 +177,12 @@ def tabla_trafico_total_y_estadisticas(empresa, client_secret, host, access_toke
     return f"--{nombre_de_archivo} creado--"
 
 def grafica_trafico_por_dia(empresa, client_secret, host, access_token, client_token, fechas, subcarpeta_path, fecha_correcta_nombre):
+    # Guardar las configuraciones Locale
+    original_locale = locale.getlocale(locale.LC_TIME)
+    
+    # Cambiar la configuracion Locale a Español para los meses de la gráfica
+    locale.setlocale(locale.LC_TIME, 'es_ES.UTF-8')
+    
     baseurl = 'https://' + host + '/'  
     s = requests.Session()
     s.auth = EdgeGridAuth(
@@ -189,7 +198,7 @@ def grafica_trafico_por_dia(empresa, client_secret, host, access_token, client_t
     "end": fechas[1],
     "interval": "HOUR", # Parámetro que define el formato de las fechas
     "objectIds": "all",
-    "metrics": "bytesOffload, edgeBitsPerSecond, midgressBitsPerSecond, originBitsPerSecond", # Al menos una métrica es necesaria...
+    "metrics": "bytesOffload, edgeBitsPerSecond, midgressBitsPerSecond, originBitsPerSecond", # Métricas seleccionadas
     "filters": "ca=cacheable",
     }
     result = s.get(urljoin(baseurl, path), params=querystring)
@@ -212,8 +221,15 @@ def grafica_trafico_por_dia(empresa, client_secret, host, access_token, client_t
         values_dictionary["midgressBitsPerSecond"].append(int(float(value.get('midgressBitsPerSecond'))))
         values_dictionary["originBitsPerSecond"].append(int(float(value.get('originBitsPerSecond'))))
     
-    # Crear lista del 1 al "length", generando "length" valores. Estos son los días de un mes.
-    dates = np.linspace(1, length, length)
+    # Convertir String de fecha en formato datetime
+    start_date = datetime.fromisoformat(fechas[0].replace('Z', ''))
+    end_date = datetime.fromisoformat(fechas[1].replace('Z', ''))
+
+    # Calcular el número total de horas en base a los segundos totales
+    num_hours = int((end_date - start_date).total_seconds() // 3600)
+
+    # Generarar un array en base a la cantidad de horas, sumando una hora a la vez
+    date_array = [start_date + timedelta(hours=i) for i in range(num_hours)]
 
     # Formato np.array
     edgeBitsPerSecond = np.array(values_dictionary["edgeBitsPerSecond"])  
@@ -226,21 +242,21 @@ def grafica_trafico_por_dia(empresa, client_secret, host, access_token, client_t
     # Posicionar gráficas en los márgenes de la ventana.
     plt.subplots_adjust(left=0.09, right=0.87, top=0.9, bottom=0.1)
     # Graficar Edge, Midgress, and Origin en el primer eje de las ordenadas
-    line1, = ax1.plot(dates, edgeBitsPerSecond, label='Edge', color='green')
-    line2, = ax1.plot(dates, midgressBitsPerSecond, label='Midgress', color='purple')
-    line3, = ax1.plot(dates, originBitsPerSecond, label='Origin', color='orange')
+    line1, = ax1.plot(date_array, edgeBitsPerSecond, label='Edge', color='green')
+    line2, = ax1.plot(date_array, midgressBitsPerSecond, label='Midgress', color='purple')
+    line3, = ax1.plot(date_array, originBitsPerSecond, label='Origin', color='orange')
     
     # Nombre del primer eje de las ordenadas
     ax1.set_ylabel('Bits/sec')
     
     # Crear segunda eje de las ordenadas para el Offload
     ax2 = ax1.twinx()
-    line4, = ax2.plot(dates, bytesOffload, label='Offload', color='blue')
+    line4, = ax2.plot(date_array, bytesOffload, label='Offload', color='blue')
     ax2.set_ylabel('Offload', labelpad=0)
     ax2.set_ylim(0, 100)
 
     # Título de la gráfica
-    plt.title(f'{empresa}: Edge, Midgress, and Origin bits/sec with Offload')
+    plt.title(f'{empresa}, {fecha_correcta_nombre}: Edge, Midgress, y Origin bits/sec con Offload')
     ax1.grid(True) # Habilitar cuadrícula
 
     # Combinar leyendas de ambos ejes
@@ -251,15 +267,19 @@ def grafica_trafico_por_dia(empresa, client_secret, host, access_token, client_t
     # Con los parámetros bbox_to_anchor y borderaxespad se puede posicionar la "caja de leyendas"
     fig.legend(lines, labels, loc='upper left', bbox_to_anchor=(0.9, 0.9), borderaxespad=1.2)
 
-    tick_positions = np.arange(1, length, 2*24)  # Custom positions for ticks (every 2 days)
-    tick_labels = [f'Jul {1 + (i * 2)}' for i in range(len(tick_positions))]
-    
-    # Asegurarse que las curvas empiecen y terminen en los márgenes de la gráfica.
-    ax1.set_xlim(min(dates), max(dates))
-    ax1.set_ylim(bottom=0) # El eje de las y empieza de 0
-    ax1.set_xticks(tick_positions) # Dónde poner texto en el eje de las abscisas
-    ax1.set_xticklabels(tick_labels, rotation=0)  # Definir qué textos usar en el eje de las abscisas
+    # Delimitar cantidad de ticks a 16
+    ax1.xaxis.set_major_locator(MaxNLocator(nbins=16))
+    # Formatear ticks a mes en español (Agosto => ago.) y día en dos caracteres
+    ax1.xaxis.set_major_formatter(mdates.DateFormatter('%b %d'))
 
+    # Usando una expresión lambda, se formatean los nombres de las ticks: "ago. 16" => "Ago 16"
+    ax1.xaxis.set_major_formatter(FuncFormatter(lambda x, pos: mdates.num2date(x).strftime('%b %d').replace('.', '').capitalize()))
+
+    # Asegurarse de que los gráficos comiencen en los bordes de la gráfica
+    ax1.set_xlim(start_date, end_date)
+
+
+    ax1.set_ylim(bottom=0) # El eje de las y empieza en 0
     # Quitar el borde de abajo de la gráfica para el eje de las ordenadas:
     ax1.spines['bottom'].set_color('none') # Eje de las ordenadas uno
     ax2.spines['bottom'].set_color('none') # Eje de las ordenadas dos
@@ -268,38 +288,48 @@ def grafica_trafico_por_dia(empresa, client_secret, host, access_token, client_t
     ax1.yaxis.set_major_formatter(FuncFormatter(lambda x, pos: f'{str(round(int(x)*si.A,2)).replace("A", "B")}/s'))
     ax2.yaxis.set_major_formatter(FuncFormatter(lambda x, pos: f'{int(x)}%'))
 
-    # Guardar imagen
+    
+    # Guardar imagen de la gráfica
     nombre_de_archivo = f"Grafica_Trafico_Por_Dia_{empresa}_{fecha_correcta_nombre}.png"
     ubicacion_de_archivo = os.path.join(subcarpeta_path, nombre_de_archivo)
     plt.savefig(ubicacion_de_archivo)
     plt.close(fig)
+
+    # Restaurar configuaración Locale a la original
+    locale.setlocale(locale.LC_TIME, original_locale)
     return f"--{nombre_de_archivo} creado--"
 
 def grafica_hits_al_origen_por_tipo_de_respuesta(empresa, client_secret, host, access_token, client_token, fechas, subcarpeta_path, fecha_correcta_nombre):
-    baseurl = 'https://' + host + '/'  # this is the "host" value from your credentials file
+    # Guardar las configuraciones Locale
+    original_locale = locale.getlocale(locale.LC_TIME)
+    
+    # Cambiar la configuracion Locale a Español para los meses de la gráfica
+    locale.setlocale(locale.LC_TIME, 'es_ES.UTF-8')
+    
+    baseurl = 'https://' + host + '/'  
     s = requests.Session()
     s.auth = EdgeGridAuth(
-        client_token=client_token,
+        client_token=client_token,  # Crear Sesión con credenciales API
         client_secret=client_secret,
         access_token=access_token
     )
     version = "1"
-    name = "traffic-by-timeandresponseclass"
+    name = "traffic-by-timeandresponseclass" # Nombre de la API
     path = '/reporting-api/v1/reports/{}/versions/{}/report-data'.format(name, version)
-    querystring = {
+    querystring = { # Parámetros de la API
     "start": fechas[0],
     "end": fechas[1],
-    "interval": "HOUR",
+    "interval": "HOUR", # Parámetro que define el formato de las fechas
     "objectIds": "all",
-    "metrics": "originHitsPerSecond", # Al menos una métrica es necesaria...
+    "metrics": "originHitsPerSecond", # Métricas seleccionadas
     "filters": "ca=cacheable",
     }
     result = s.get(urljoin(baseurl, path), params=querystring)
     print(f"Configuración (Gráfica de hits al origen por segundo y por tipo de respuesta): {empresa}")
     print(f"HTTPS clase de respuesta (Gráfica de hits al origen por segundo y por tipo de respuesta): {result.status_code}")
-    response_json = result.json()
+    response_json = result.json() # Obtener respuesta de Sesión en formato JSON
     data = response_json.get('data', [])
-    length = len(data)
+    length = len(data) # Número de elementos devueltos al llamar a la API
     values_dictionary = {
         "0xx" : [],
         "1xx" : [],
@@ -309,15 +339,28 @@ def grafica_hits_al_origen_por_tipo_de_respuesta(empresa, client_secret, host, a
         "5xx" : []
     }
     for dict in data:
+        # Acceder a mini lista dentro del diccionario con llave "data"
         mini_list = dict.get("data")
         for mini_dict in mini_list:
+            # Acceder al mini diccionario dentro de la mini lista y adjuntar datos al diccionario "values_dictionary"
             values_dictionary[str(mini_dict.get("response_class"))].append(round(float(mini_dict.get('originHitsPerSecond')),4))
     
     if not values_dictionary["1xx"]:
+        # A veces no hay respuestas 1xx, en ese caso llenar diccionario con 0s.
         values_dictionary["1xx"] = [0] * length  
         
                       
-    dates = np.linspace(1, length, length)  # Days of the month, create from 1 to length, length values.
+    # Convertir String de fecha en formato datetime
+    start_date = datetime.fromisoformat(fechas[0].replace('Z', ''))
+    end_date = datetime.fromisoformat(fechas[1].replace('Z', ''))
+
+    # Calcular el número total de horas en base a los segundos totales
+    num_hours = int((end_date - start_date).total_seconds() // 3600)
+
+    # Generarar un array en base a la cantidad de horas, sumando una hora a la vez
+    date_array = [start_date + timedelta(hours=i) for i in range(num_hours)]
+    
+    # Formato np.array
     response_0xx = np.array(values_dictionary["0xx"])  
     response_1xx = np.array(values_dictionary["1xx"])  
     response_2xx = np.array(values_dictionary["2xx"])  
@@ -325,44 +368,61 @@ def grafica_hits_al_origen_por_tipo_de_respuesta(empresa, client_secret, host, a
     response_4xx = np.array(values_dictionary["4xx"])  
     response_5xx = np.array(values_dictionary["5xx"]) 
 
+    # Crear gráfica
     fig, ax1 = plt.subplots(figsize=(14, 6))
+    # Posicionar gráficas en los márgenes de la ventana.
     plt.subplots_adjust(left=0.09, right=0.87, top=0.9, bottom=0.1)
-    # Error responses on the y-axis
-    line1, = ax1.plot(dates, response_0xx, label='0xx', color='orange')
-    line2, = ax1.plot(dates, response_1xx, label='1xx', color='blue')
-    line3, = ax1.plot(dates, response_2xx, label='2xx', color='green')
-    line1, = ax1.plot(dates, response_3xx, label='3xx', color='cyan')
-    line2, = ax1.plot(dates, response_4xx, label='4xx', color='pink')
-    line3, = ax1.plot(dates, response_5xx, label='5xx', color='red')
+    # Graficar Hits al Origen por Segundo en base al tipo de respuesta
+    ax1.plot(date_array, response_0xx, label='0xx', color='orange')
+    ax1.plot(date_array, response_1xx, label='1xx', color='blue')
+    ax1.plot(date_array, response_2xx, label='2xx', color='green')
+    ax1.plot(date_array, response_3xx, label='3xx', color='cyan')
+    ax1.plot(date_array, response_4xx, label='4xx', color='pink')
+    ax1.plot(date_array, response_5xx, label='5xx', color='red')
+    
+    # Nombre del eje de las ordenadas
     ax1.set_ylabel('Hits/sec')
+    # Posicionar leyendas
     ax1.legend(loc='upper left', bbox_to_anchor=(1.01, 1), borderaxespad=0.)
     
-    # Add title and grid
-    plt.title(f'{empresa}: Origin hits/sec by response class')
-    ax1.grid(True)
+    # Título de la gráfica
+    plt.title(f'{empresa}, {fecha_correcta_nombre}: Origin hits/sec by response class')
+    ax1.grid(True) # Habilitar cuadrícula
 
-    tick_positions = np.arange(1, length, 2*24)  # Custom positions for ticks (every 2 days)
-    tick_labels = [f'Jul {1 + (i * 2)}' for i in range(len(tick_positions))]
+    # Delimitar cantidad de ticks a 16
+    ax1.xaxis.set_major_locator(MaxNLocator(nbins=16))
+    # Formatear ticks a mes en español (Agosto => ago.) y día en dos caracteres
+    ax1.xaxis.set_major_formatter(mdates.DateFormatter('%b %d'))
+
+    # Usando una expresión lambda, se formatean los nombres de las ticks: "ago. 16" => "Ago 16"
+    ax1.xaxis.set_major_formatter(FuncFormatter(lambda x, pos: mdates.num2date(x).strftime('%b %d').replace('.', '').capitalize()))
+
+    # Asegurarse de que los gráficos comiencen en los bordes de la gráfica
+    ax1.set_xlim(start_date, end_date)
     
-    ax1.set_xlim(min(dates), max(dates))
-    ax1.set_ylim(bottom=0)
-    ax1.set_xticks(tick_positions)
-    ax1.set_xticklabels(tick_labels, rotation=0)  # Rotate for readability
-    ax1.spines['bottom'].set_color('none')  # Remove the bottom border
+    
+    ax1.set_ylim(bottom=0) # El eje de las y empieza en 0
+    ax1.spines['bottom'].set_color('none') # Quitar el borde de abajo de la gráfica
 
+    # Formatear el texto del eje de las ordenadas
     ax1.yaxis.set_major_formatter(FuncFormatter(lambda x, pos: f'{int(x)}.00')) 
-
+    
+    # Guardar imagen de la gráfica
     nombre_de_archivo = f"Grafica_de_Hits_al_Origen_al_Tipo_de_respuesta_{empresa}_{fecha_correcta_nombre}.png"
-    file_path = os.path.join(subcarpeta_path, nombre_de_archivo)
-    plt.savefig(file_path)
+    ubicacion_de_archivo = os.path.join(subcarpeta_path, nombre_de_archivo)
+    plt.savefig(ubicacion_de_archivo)
     plt.close(fig)
 
+    # Restaurar configuaración Locale a la original
+    locale.setlocale(locale.LC_TIME, original_locale)
     return f"--{nombre_de_archivo} creado--"
 
+# Genera Tabla de Tráfico por CPcode, ordenado por orden descendiente de Bytes de Edge
 def tabla_hits_por_tipo(empresa, client_secret, host, access_token, client_token, fechas, subcarpeta_path, fecha_correcta_nombre, cpcode = "all"):
     
+    # Formatea los valores de acuerdo a la convención de DIMTEC para este tipo de tabla
     def formatear_valores(row):
-        new_row = [row[0]]
+        new_row = [row[0]] # El primer valor de cada fila se mantiene igual
         for value in row[1:]:
             if isinstance(value, int):
                 new_row.append(f"{value:,}")
@@ -373,32 +433,39 @@ def tabla_hits_por_tipo(empresa, client_secret, host, access_token, client_token
                     new_row.append(f"{value:.2f} %")
             else:
                 new_row.append(value)
-        return new_row
+        return new_row # return fila formateada
 
-    def filas_ordenadas(file, column):
-        df = pd.read_csv(file)
-        sorted_df = df.sort_values(by=column, ascending=False)
-        new_rows = [formatear_valores(row) for row in sorted_df.values]
-        final_df = pd.DataFrame(new_rows, columns=sorted_df.columns)
-        final_df.to_csv(file, index=False)
+    def filas_ordenadas(archivo, ordenar_por_esta_columna):
+        dataframe = pd.read_csv(archivo)  # Lee el archivo
+
+        # Ordena en orden descendiente el archivo en base a "columna"
+        dataframe_ordenado = dataframe.sort_values(by=ordenar_por_esta_columna, ascending=False)
+       
+        # Obtener nuevas filas
+        nuevas_filas = [formatear_valores(row) for row in dataframe_ordenado.values]
+        final_df = pd.DataFrame(nuevas_filas, columns=dataframe_ordenado.columns)
+        final_df.to_csv(archivo, index=False) # Archivo actualizado
     
-    if (cpcode == "all"):
+    if (cpcode == "all"): # Si no se pasa una cpcode como parametro
+        # No se menciona la cpcode en los nombres
         nombre_de_archivo = f"tabla_hits_por_tipo_{empresa}_{fecha_correcta_nombre}.csv"
         columnaCSV = 'Tipo de Respuesta'
-    else:
+    else: # Si se pasa una cpcode como parametro
+        # Se menciona la cpcode en los nombres
         nombre_de_archivo = f"tabla_hits_por_tipo_{empresa}_{cpcode}_{fecha_correcta_nombre}.csv"
         columnaCSV = f"Tipo de Respuesta ({cpcode})"
-    baseurl = 'https://' + host + '/'  # this is the "host" value from your credentials file
+    
+    baseurl = 'https://' + host + '/' 
     s = requests.Session()
     s.auth = EdgeGridAuth(
-        client_token=client_token,
+        client_token=client_token,  # Credenciales de API
         client_secret=client_secret,
         access_token=access_token
     )
     version = "1"
-    name = "traffic-by-responseclass"
+    name = "traffic-by-responseclass" # API
     path = '/reporting-api/v1/reports/{}/versions/{}/report-data'.format(name, version)
-    querystring = {
+    querystring = { # Parámetros de API
             "start": fechas[0],
             "end": fechas[1],
             "objectIds": cpcode,
@@ -408,23 +475,29 @@ def tabla_hits_por_tipo(empresa, client_secret, host, access_token, client_token
     result = s.get(urljoin(baseurl, path), params=querystring)
     print(f"Configuración (Tabla hits por tipo de respuesta): {empresa}")
     print(f"HTTPS clase de respuesta (Tabla hits por tipo de respuesta): {result.status_code}")
-    response_json = result.json()
-    data = response_json.get('data')
+    response_json = result.json() # Respuesta en formato JSON
+    data = response_json.get('data') # Acceder a Data
+
+    # Dónde guardar el archivo
     csv_ubicacion = os.path.join(subcarpeta_path, nombre_de_archivo)
     with open(csv_ubicacion, mode='w', newline='') as file:
         writer = csv.writer(file)
+        # Columnas
         header = [columnaCSV, 'Edge Hits', 'Edge Hits %', 'Origin Hits', 'Origin Hits %']
         writer.writerow(header)
-        for tipo_de_respuesta in data:
+
+        for tipo_de_respuesta in data: 
             if tipo_de_respuesta:
+                # Registrar los valores relevantes
                 writer.writerow([tipo_de_respuesta.get("response_class"), tipo_de_respuesta.get('edgeHits'), tipo_de_respuesta.get('edgeHitsPercent'), tipo_de_respuesta.get('originHits'), tipo_de_respuesta.get('originHitsPercent')])     
     
+    # Ordenar el archivo
     filas_ordenadas(csv_ubicacion, "Edge Hits")
     return f"--{nombre_de_archivo} creado--"
 
 def tabla_hits_por_url(empresa, client_secret, host, access_token, client_token, fechas, subcarpeta_path, fecha_correcta_nombre):
     def formatear_valores(row):
-        new_row = [row[0]]
+        new_row = [row[0]] # El primer valor de cada fila se mantiene igual
         for value in row[1:]:
             if isinstance(value, int):
                 new_row.append(f"{value:,}")
@@ -435,27 +508,31 @@ def tabla_hits_por_url(empresa, client_secret, host, access_token, client_token,
                     new_row.append(f"{value:.2f} %")
             else:
                 new_row.append(value)
-        return new_row
+        return new_row # return fila formateada
 
-    def filas_ordenadas(file, column):
-        df = pd.read_csv(file)
-        sorted_df = df.sort_values(by=column, ascending=False)
-        new_rows = [formatear_valores(row) for row in sorted_df.values]
-        final_df = pd.DataFrame(new_rows, columns=sorted_df.columns)
+    def filas_ordenadas(archivo, ordenar_por_esta_columna):
+        dataframe = pd.read_csv(archivo) # Lee el archivo
+
+        # Ordena en orden descendiente el archivo en base a "columna"
+        dataframe_ordenado = dataframe.sort_values(by=ordenar_por_esta_columna, ascending=False)
+        
+        # Obtener nuevas filas
+        nuevas_filas = [formatear_valores(row) for row in dataframe_ordenado.values]
+        final_df = pd.DataFrame(nuevas_filas, columns=dataframe_ordenado.columns)
         final_df = final_df.head(10)
-        final_df.to_csv(file, index=False)
+        final_df.to_csv(archivo, index=False) # Archivo actualizado
     
-    baseurl = 'https://' + host + '/'  # this is the "host" value from your credentials file
+    baseurl = 'https://' + host + '/' 
     s = requests.Session()
     s.auth = EdgeGridAuth(
-        client_token=client_token,
+        client_token=client_token, # Credenciales de API
         client_secret=client_secret,
         access_token=access_token
     )
     version = "1"
-    name = "urlhits-by-url"
+    name = "urlhits-by-url" # API
     path = '/reporting-api/v1/reports/{}/versions/{}/report-data'.format(name, version)
-    querystring = {
+    querystring = { # Parámetros de API
             "start": "2024-06-01T00:00:00Z",
             "end": "2024-07-01T00:00:00Z",
             "objectIds": "all",
@@ -465,24 +542,29 @@ def tabla_hits_por_url(empresa, client_secret, host, access_token, client_token,
     result = s.get(urljoin(baseurl, path), params=querystring)
     print(f"Configuración (Tabla hits por URL): {empresa}")
     print(f"HTTPS clase de respuesta (Tabla hits por URL): {result.status_code}")
-    response_json = result.json()
-    # print(f"Response JSON: {json.dumps(response_json, indent=2)}")
-    data = response_json.get('data')
+    response_json = result.json() # Respuesta en formato JSON
+    data = response_json.get('data') # Acceder a Data
+
+    # Nombre de archivo y dónde guardarlo
     nombre_de_archivo = f"tabla_hits_por_URL_{empresa}_{fecha_correcta_nombre}.csv"
     csv_ubicacion = os.path.join(subcarpeta_path, nombre_de_archivo)
     with open(csv_ubicacion, mode='w', newline='') as file:
         writer = csv.writer(file)
+        # Columnas
         header = ['URL', 'Edge Hits', 'Origin Hits', 'Offload']
         writer.writerow(header)
         for response in data:
             if response:
+                # Registrar los valores relevantes
                 writer.writerow([response.get("hostname.url"), response.get('allEdgeHits'), response.get('allOriginHits'), response.get('allHitsOffload')])     
+    
+    # Ordenar el archivo
     filas_ordenadas(csv_ubicacion, "Edge Hits")
     return f"--{nombre_de_archivo} creado--"
 
 
 def main():
-    return
+    return # Este programa debería correrse a través de programa_principal.py
 
 if __name__ == "__main__":
     main()
