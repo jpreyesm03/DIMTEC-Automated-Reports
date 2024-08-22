@@ -126,11 +126,12 @@ def definir_fecha_de_mes(mes_eleccion):
 
 def definir_nombre(nombre_ideal, carpeta_ancestra_path = "", subcarpeta = False):
     if (not subcarpeta): # Caso carpeta
+        ubicacion_del_programa_py = os.path.dirname(os.path.abspath(__file__))
         contador = 1
-        nombre_carpeta = nombre_ideal
+        nombre_carpeta = os.path.join(carpeta_ancestra_path, nombre_ideal)
 
         while os.path.exists(nombre_carpeta): # Si actualmente ya existe una carpeta "nombre_ideal"
-            nombre_carpeta = f"{nombre_ideal}[{contador}]" # Nuevo nombre con el sufijo [1] dependiendo del contador
+            nombre_carpeta = os.path.join(ubicacion_del_programa_py, f"{nombre_ideal}[{contador}]") # Nuevo nombre con el sufijo [1] dependiendo del contador
             contador += 1
         return nombre_carpeta
     

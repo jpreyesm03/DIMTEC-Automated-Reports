@@ -14,7 +14,7 @@ def widget_calendario(fecha_minima_parametro = ""):
         # Formato para la librería re
         pattern = re.compile(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z")
         if not pattern.match(date_str):
-            raise ValueError(f"String de fecha'{date_str}' no tiene el formato'{formato_de_fechas}'")
+            raise ValueError(f"String de fecha '{date_str}' no tiene el formato '{formato_de_fechas}'")
         
         try:
             return datetime.strptime(date_str, formato_de_fechas).replace(tzinfo=timezone.utc)

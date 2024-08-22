@@ -161,9 +161,9 @@ def tabla_trafico_total_y_estadisticas(empresa, client_secret, host, access_toke
     columnas = ["", "Offload", "Edge", "Midgress", "Origin"]
 
     # Llenar listas con la información formateada
-    total = ["Total", f"{float(summary_stats.get("bytesOffloadAvg").get("value")):.2f} %", f"{str(round(int(float(summary_stats.get("edgeBytesTotal").get("value")))*si.A,2)).replace("A", "B")}", f"{str(round(int(float(summary_stats.get("midgressBytesTotal").get("value")))*si.A,2)).replace("A", "B")}", f"{str(round(int(float(summary_stats.get("originBytesTotal").get("value")))*si.A,2)).replace("A", "B")}"]
-    minimos = ["Minimo", f"{float(summary_stats.get("bytesOffloadMin").get("value")):.2f} %", f"{str(round(int(float(summary_stats.get("edgeBitsPerSecondMin").get("value")))*si.A,2)).replace("A", "B")}/s", f"{str(round(int(float(summary_stats.get("midgressBitsPerSecondMin").get("value")))*si.A,2)).replace("A", "B")}/s", f"{str(round(int(float(summary_stats.get("originBitsPerSecondMin").get("value")))*si.A,2)).replace("A", "B")}/s"]
-    maximos = ["Maximo", f"{float(summary_stats.get("bytesOffloadMax").get("value")):.2f} %", f"{str(round(int(float(summary_stats.get("edgeBitsPerSecondMax").get("value")))*si.A,2)).replace("A", "B")}/s", f"{str(round(int(float(summary_stats.get("midgressBitsPerSecondMax").get("value")))*si.A,2)).replace("A", "B")}/s", f"{str(round(int(float(summary_stats.get("originBitsPerSecondMax").get("value")))*si.A,2)).replace("A", "B")}/s"]
+    total = ["Total", f"{float(summary_stats.get('bytesOffloadAvg').get('value')):.2f} %", f"{str(round(int(float(summary_stats.get('edgeBytesTotal').get('value')))*si.A,2)).replace('A', 'B')}", f"{str(round(int(float(summary_stats.get('midgressBytesTotal').get('value')))*si.A,2)).replace('A', 'B')}", f"{str(round(int(float(summary_stats.get('originBytesTotal').get('value')))*si.A,2)).replace('A', 'B')}"]
+    minimos = ["Minimo", f"{float(summary_stats.get('bytesOffloadMin').get('value')):.2f} %", f"{str(round(int(float(summary_stats.get('edgeBitsPerSecondMin').get('value')))*si.A,2)).replace('A', 'B')}/s", f"{str(round(int(float(summary_stats.get('midgressBitsPerSecondMin').get('value')))*si.A,2)).replace('A', 'B')}/s", f"{str(round(int(float(summary_stats.get('originBitsPerSecondMin').get('value')))*si.A,2)).replace('A', 'B')}/s"]
+    maximos = ["Maximo", f"{float(summary_stats.get('bytesOffloadMax').get('value')):.2f} %", f"{str(round(int(float(summary_stats.get('edgeBitsPerSecondMax').get('value')))*si.A,2)).replace('A', 'B')}/s", f"{str(round(int(float(summary_stats.get('midgressBitsPerSecondMax').get('value')))*si.A,2)).replace('A', 'B')}/s", f"{str(round(int(float(summary_stats.get('originBitsPerSecondMax').get('value')))*si.A,2)).replace('A', 'B')}/s"]
     
     # Nombre de archivo CSV
     nombre_de_archivo = f"tabla_trafico_total_y_estaditicas_{empresa}_{fecha_correcta_nombre}.csv"
@@ -259,7 +259,7 @@ def grafica_trafico_por_dia(empresa, client_secret, host, access_token, client_t
     ax2.set_ylim(0, 100)
 
     # Título de la gráfica
-    plt.title(f'{empresa}, {fecha_correcta_nombre}: Edge, Midgress, y Origin bits/sec con Offload')
+    plt.title(f"{empresa}, {fecha_correcta_nombre}: Edge, Midgress, y Origin bits/sec con Offload")
     ax1.grid(True) # Habilitar cuadrícula
 
     # Combinar leyendas de ambos ejes
@@ -288,8 +288,8 @@ def grafica_trafico_por_dia(empresa, client_secret, host, access_token, client_t
     ax2.spines['bottom'].set_color('none') # Eje de las ordenadas dos
 
     # Formatear el texto de ambos ejes de las ordenadas
-    ax1.yaxis.set_major_formatter(FuncFormatter(lambda x, pos: f'{str(round(int(x)*si.A,2)).replace("A", "B")}/s'))
-    ax2.yaxis.set_major_formatter(FuncFormatter(lambda x, pos: f'{int(x)}%'))
+    ax1.yaxis.set_major_formatter(FuncFormatter(lambda x, pos: f"{str(round(int(x)*si.A,2)).replace('A', 'B')}/s"))
+    ax2.yaxis.set_major_formatter(FuncFormatter(lambda x, pos: f"{int(x)}%"))
 
     
     # Guardar imagen de la gráfica
@@ -389,7 +389,7 @@ def grafica_hits_al_origen_por_tipo_de_respuesta(empresa, client_secret, host, a
     ax1.legend(loc='upper left', bbox_to_anchor=(1.01, 1), borderaxespad=0.)
     
     # Título de la gráfica
-    plt.title(f'{empresa}, {fecha_correcta_nombre}: Origin hits/sec by response class')
+    plt.title(f"{empresa}, {fecha_correcta_nombre}: Origin hits/sec by response class")
     ax1.grid(True) # Habilitar cuadrícula
 
     # Delimitar cantidad de ticks a 16
@@ -408,7 +408,7 @@ def grafica_hits_al_origen_por_tipo_de_respuesta(empresa, client_secret, host, a
     ax1.spines['bottom'].set_color('none') # Quitar el borde de abajo de la gráfica
 
     # Formatear el texto del eje de las ordenadas
-    ax1.yaxis.set_major_formatter(FuncFormatter(lambda x, pos: f'{int(x)}.00')) 
+    ax1.yaxis.set_major_formatter(FuncFormatter(lambda x, pos: f"{int(x)}.00")) 
     
     # Guardar imagen de la gráfica
     nombre_de_archivo = f"Grafica_de_Hits_al_Origen_al_Tipo_de_respuesta_{empresa}_{fecha_correcta_nombre}.png"
