@@ -13,6 +13,7 @@ from datetime import datetime, timedelta
 import locale
 import json
 
+
 def extraer_cpcodes(empresa, client_secret, host, access_token, client_token, fechas):
     lista_de_cpcodes = []
     baseurl = 'https://' + host + '/' # Enlace base

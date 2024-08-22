@@ -8,13 +8,13 @@ from funciones_cortas import reportes_generales # type: ignore
 from funciones_cortas import multiples_fechas # type: ignore
 from funciones_cortas import reportes_distintos # type: ignore
 from funciones_cortas import crear_carpeta # type: ignore
+from funciones_cortas import introduccion # type: ignore
+
 
 
 
 def main():
-    introduccion = "¡Hola! Puedes generar todos los reportes desde este programa. La idea es que solamente utilice números a lo largo del programa."
     print(introduccion)
-
     es_manual = automatico_o_manual() # En base a la respuesta en la consola, se determina si los reportes serán generador manualmente o no.
     archivo = seleccionar_archivo() # GUI para abrir archivo
     carpeta = crear_carpeta() # Crea carpeta utilizando el día de hoy

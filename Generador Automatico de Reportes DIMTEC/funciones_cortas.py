@@ -10,6 +10,8 @@ import subprocess
 import os
 from dateutil.relativedelta import relativedelta
 
+introduccion = "\n¡Hola! Puedes generar todos los reportes desde este programa. La idea es que solamente utilice números a lo largo del programa."
+
 def agregar_tiempo(fecha_a_cambiar, cambio_tiempo = "1 MES"):
     # Definir un formato de fecha acorde al ISO 8601
     formato_de_fecha = "%Y-%m-%dT%H:%M:%SZ"
@@ -38,7 +40,7 @@ def agregar_tiempo(fecha_a_cambiar, cambio_tiempo = "1 MES"):
 
 def automatico_o_manual():
     # Imprimir en la consola las opciones
-    print("\n" + """
+    print("""
           Existe un formato general de reporte. Desea que todas las empresas
           usen este formato predefinido? """ + "\n")
     print("1. Usar el formato predefinido de reporte para todas las empresas.")
