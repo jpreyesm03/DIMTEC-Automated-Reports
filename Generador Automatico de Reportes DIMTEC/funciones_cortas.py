@@ -418,7 +418,7 @@ def reportes_generales(archivo, fechas, carpeta_creada):
         print(tabla_hits_por_url(empresa, credenciales[0], credenciales[1], credenciales[2], credenciales[3], fechas_correctas_ISO_8601(fechas, interval = "URL_SPECIAL"), subcarpeta_path, formatear_fechas(fechas[0], fechas[1])))
         
         print("\n"*4 + "-"*6 + f"Reportes de {empresa} terminados" + "-"*6 + "\n"*4)
-        print("Todavía hay que generar reportes para " + str(len(empresas) - 1 - contador) + " empresas más." + "\n")
+        print("Todavía hay que generar reportes para " + str(len(empresas) - 1 - contador) + " empresa(s) más." + "\n")
         contador += 1
     
 

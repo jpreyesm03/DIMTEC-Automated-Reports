@@ -40,7 +40,7 @@ def main():
             generar_reportes(empresa, credenciales[0], credenciales[1], credenciales[2], credenciales[3], fechas, lista_de_reportes, carpeta)
             
             print("\n"*4 + "-"*6 + f"Reportes de {empresa} terminados" + "-"*6 + "\n"*4)
-            print("Todavía hay que generar reportes para " + str(len(empresas_y_credenciales) - 1 - contador) + " empresas más." + "\n")
+            print("Todavía hay que generar reportes para " + str(len(empresas_y_credenciales) - 1 - contador) + " empresa(s) más." + "\n")
             contador += 1
 
     else:
