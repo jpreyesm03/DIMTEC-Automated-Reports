@@ -536,8 +536,8 @@ def tabla_hits_por_url(empresa, client_secret, host, access_token, client_token,
     name = "urlhits-by-url" # API
     path = '/reporting-api/v1/reports/{}/versions/{}/report-data'.format(name, version)
     querystring = { # Parámetros de API
-            "start": "2024-06-01T00:00:00Z",
-            "end": "2024-07-01T00:00:00Z",
+            "start": fechas[0],
+            "end": fechas[1],
             "objectIds": "all",
             "metrics": "",
             "filters": "",

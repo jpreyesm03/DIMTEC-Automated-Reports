@@ -174,6 +174,11 @@ def fechas_correctas_ISO_8601(fechas, interval = "NONE"):
         fecha_inicial_modificada = fecha_inicial_modificada[:14] + "00" + fecha_inicial_modificada[16:]                
         fecha_final_modificada = fecha_final_modificada[:14] + "00" + fecha_final_modificada[16:]
 
+    elif (interval == "URL_SPECIAL"):
+        fecha_inicial_modificada = fecha_inicial_modificada[:11] + "00:00" + fecha_inicial_modificada[16:]
+        fecha_final_modificada = agregar_tiempo(fecha_final_modificada, cambio_tiempo = "1 DIA")
+        return [fecha_inicial_modificada, fecha_final_modificada]
+
     else: #Tipo de intervalo de ciertas funciones, interval = "FIVE_MINUTES"
         # Fijar fecha inicial en medianoche
         fecha_inicial_modificada = fecha_inicial_modificada[:11] + "00:00" + fecha_inicial_modificada[16:]
@@ -236,6 +241,9 @@ def generar_reportes(empresa, client_secret, host, access_token, client_token, f
             # Iteración sobre cada cpcode escogida
             for cpc in cpcodes:
                 print(funciones_disponibles[index-1](empresa, client_secret, host, access_token, client_token, fechas_correctas_ISO_8601(fechas, interval = "NONE"), subcarpeta_path, formatear_fechas(fechas[0], fechas[1]), cpcode = cpc))
+        
+        elif (index == 7): # La tabla 7 tiene ciertas limitaciones de fechas, por ejemplo, las fechas tienen que estar a la medianoche.
+            print(funciones_disponibles[index-1](empresa, client_secret, host, access_token, client_token, fechas_correctas_ISO_8601(fechas, interval = "URL_SPECIAL"), subcarpeta_path, formatear_fechas(fechas[0], fechas[1])))
         
         else: # Para el resto de los casos:
             print(funciones_disponibles[index-1](empresa, client_secret, host, access_token, client_token, fechas_correctas_ISO_8601(fechas, interval = "NONE"), subcarpeta_path, formatear_fechas(fechas[0], fechas[1])))
@@ -407,7 +415,7 @@ def reportes_generales(archivo, fechas, carpeta_creada):
         except:
             print("No se detectaron cpcodes. ¿Está seguro que las credenciales de las APIs están vigentes?")
         # último reporte
-        print(tabla_hits_por_url(empresa, credenciales[0], credenciales[1], credenciales[2], credenciales[3], fechas_correctas_ISO_8601(fechas, interval = "NONE"), subcarpeta_path, formatear_fechas(fechas[0], fechas[1])))
+        print(tabla_hits_por_url(empresa, credenciales[0], credenciales[1], credenciales[2], credenciales[3], fechas_correctas_ISO_8601(fechas, interval = "URL_SPECIAL"), subcarpeta_path, formatear_fechas(fechas[0], fechas[1])))
         
         print("\n"*4 + "-"*6 + f"Reportes de {empresa} terminados" + "-"*6 + "\n"*4)
         print("Todavía hay que generar reportes para " + str(len(empresas) - 1 - contador) + " empresas más." + "\n")
