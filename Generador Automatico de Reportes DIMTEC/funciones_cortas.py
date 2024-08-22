@@ -360,7 +360,7 @@ def primer_fecha_mas_reciente_que_segunda_fecha(primer_fecha, segunda_fecha):
     fecha_b = datetime.strptime(segunda_fecha, formato_de_fecha)
     
     # Compara ambas fechas, la mayor es la más reciente
-    if fecha_a >= fecha_b:
+    if fecha_a > fecha_b:
         return True
     
     return False
