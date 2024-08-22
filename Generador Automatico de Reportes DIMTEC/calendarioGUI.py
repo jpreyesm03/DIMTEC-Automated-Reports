@@ -6,104 +6,100 @@ import argparse
 
 
 
-def widget_calendario(min_date_given = ""):
+def widget_calendario(fecha_minima_parametro = ""):
 
-    def corrected_date(date_str):
-        date_format = "%Y-%m-%dT%H:%M:%SZ"
+    def fecha_datetime(date_str): # Recibe una fecha en String y la devuelve en datetime
+        # Formato de fecha ISO 8601
+        formato_de_fechas = "%Y-%m-%dT%H:%M:%SZ"
+        # Formato para la librería re
         pattern = re.compile(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z")
         if not pattern.match(date_str):
-            raise ValueError(f"Date string '{date_str}' does not match format '{date_format}'")
+            raise ValueError(f"String de fecha'{date_str}' no tiene el formato'{formato_de_fechas}'")
         
         try:
-            return datetime.strptime(date_str, date_format).replace(tzinfo=timezone.utc)
+            return datetime.strptime(date_str, formato_de_fechas).replace(tzinfo=timezone.utc)
         except ValueError as e:
-            print(f"Error parsing date: {e}")
+            print(f"Error formateando la fecha: {e}")
             raise
-
-
-
-
-    selected_date = None
-    selected_time = None
-
-    def get_date_time():
-        nonlocal selected_date, selected_time
-        try:
-            selected_date = cal.get_date()  # Get the selected date from the DateEntry widget
-            selected_time = time_hour.get() + ":" + time_minute.get()  # Get the selected time from the Spinbox widgets
-        except Exception as e:
-            print(f"Error getting date and time: {e}")
-        finally:
-            root.destroy()  # Ensure the GUI window is destroyed
-
-    today = datetime.today().date()  # Use datetime.today().date() to get the current date
-    now = datetime.now()  # Use datetime.now() to get the current datetime
-    max_date = today - timedelta(days = 1)
     
-    if not min_date_given:
-        min_date = today - timedelta(days = 91)
-        fecha_a_mostrar = min_date
-        titulo_a_mostrar = "Seleccione una fecha y hora inicial:"
-    else:
+    # Variables globales
+    fecha_seleccionada = None
+    hora_seleccionada = None
+
+    def obtener_fecha_y_hora():
+        nonlocal fecha_seleccionada, hora_seleccionada
         try:
-            min_date = corrected_date(min_date_given)
-            min_date += timedelta(days = 1)
+            fecha_seleccionada = cal.get_date()  # Obtener la fecha
+            hora_seleccionada = tiempo_hora.get() + ":" + tiempo_minuto.get()  # Obtener la hora
+        except Exception as e:
+            print(f"Error obteniendo fecha y hora: {e}")
+        finally:
+            root.destroy()  # Asegurarse de que la GUI se destruya
+
+    hoy = datetime.today().date()  # Usar datetime.today().date() para obtener la fecha de hoy.
+    ahora = datetime.now()  # Usar datetime.now() para obtener la fecha de hoy.
+    fecha_maxima = hoy - timedelta(days = 1) # Fecha máxima posible en el GUI
+    titulo_a_mostrar = "Seleccione una fecha y hora inicial:"
+    if not fecha_minima_parametro: # Si se pasó una fecha mínimo como parámetro:
+        fecha_minima = hoy - timedelta(days = 91)
+        fecha_a_mostrar = fecha_minima # Fecha por default en el GUI
+        
+    else: # Si se pasó una fecha mínimo como parámetro:
+        try:
+            # Formatear las fechas
+            fecha_minima = fecha_datetime(fecha_minima_parametro)
+            # La fecha mínima es el día 91 para evitar incovenientes.
+            fecha_minima += timedelta(days = 1)
         except ValueError as e:
             return f"Error: {e}"
-        
-        fecha_a_mostrar = max_date
-        titulo_a_mostrar = "Seleccione una fecha y hora final:"
+        fecha_a_mostrar =  fecha_maxima # Fecha por default en el GUI
     
-    root = tk.Tk()
+    root = tk.Tk() # Mostrar GUI
     root.title(titulo_a_mostrar)
 
-    # Set the DateEntry widget to start at max_date
+    # Definir parámetros del calendario GUI
     cal = DateEntry(root, width = 12, background = 'darkblue', foreground = 'white', borderwidth = 2, 
                     year = fecha_a_mostrar.year, month = fecha_a_mostrar.month, day = fecha_a_mostrar.day,
-                    locale = 'es_ES', maxdate = max_date, mindate = min_date, 
+                    locale = 'es_ES', maxdate = fecha_maxima, mindate = fecha_minima, 
                     weekendbackground = 'white', weekendforeground = 'black')
     cal.pack(pady = 10)
 
-    # Initialize Spinbox widgets for time with full range and default to current time
-    time_hour = tk.Spinbox(root, from_ = 0, to = 23, width = 2, format = "%02.0f", justify = 'center')
-    time_hour.pack(side = 'left', padx = (10, 5))
-    time_hour.delete(0, 'end')
-    time_hour.insert(0, f"{now.hour:02d}")
-    
-    time_minute = tk.Spinbox(root, from_ = 0, to = 59, width = 2, format = "%02.0f", justify = 'center')
-    time_minute.pack(side = 'left', padx = (5, 10))
-    time_minute.delete(0, 'end')
-    time_minute.insert(0, f"{now.minute:02d}")
+    # Spinbox widget con sus parámetros de horas y de minutos
+    tiempo_hora = tk.Spinbox(root, from_ = 0, to = 23, width = 2, format = "%02.0f", justify = 'center')
+    tiempo_hora.pack(side = 'left', padx = (10, 5))
+    tiempo_hora.delete(0, 'end')
+    tiempo_hora.insert(0, f"{ahora.hour:02d}")
+    tiempo_minuto = tk.Spinbox(root, from_ = 0, to = 59, width = 2, format = "%02.0f", justify = 'center')
+    tiempo_minuto.pack(side = 'left', padx = (5, 10))
+    tiempo_minuto.delete(0, 'end')
+    tiempo_minuto.insert(0, f"{ahora.minute:02d}")
 
-    button = tk.Button(root, text = "Obtener fecha y hora", command = get_date_time)
+    # Botón para extraer la información
+    button = tk.Button(root, text = "Obtener fecha y hora", command = obtener_fecha_y_hora)
     button.pack(pady = 10)
 
+    # Iniciar proceso en el hilo principal
     root.mainloop()
-
-    # Capture the return values after the window is closed
+    # Terminar proceso cuando el botón haya sido presionado
     root.quit()
-    if selected_date is not None and selected_time is not None:
-        
-        return str(selected_date) + "T" + str(selected_time) + ":00Z"
+    if fecha_seleccionada is not None and hora_seleccionada is not None:
+        # return la fecha en formato ISO 8601
+        return str(fecha_seleccionada) + "T" + str(hora_seleccionada) + ":00Z"
     else:
         return "No date and time selected"
 
-def obtener_fechas_GUI():
-    first_run = widget_calendario()
-    print(first_run)
-    second_run = widget_calendario(first_run)
-    print(second_run)
-    return first_run, second_run
-
 def main():
+    # Obtener argumentos pasados como parámetros en la consola desde funciones_cortas.py 
     parser = argparse.ArgumentParser(description="Calendar program")
-    parser.add_argument('min_date_given', type=str, help='Minimum date as an ISO 8601 string')
+    parser.add_argument('fecha_minima_parametro', type=str, help='Minimum date as an ISO 8601 string')
     args = parser.parse_args()
 
-    min_date_given = args.min_date_given
-    selected_date_time = widget_calendario(min_date_given)
-    print(str(selected_date_time))
-    # print("Este programa sólo existe como ayuda para funciones_cortas.py, que a su vez depende de programa_principal.py")
+    # Extraer parámetro 
+    fecha_minima_parametro = args.fecha_minima_parametro
+
+    # Correr programa e imprimir respuesta
+    fecha_y_hora = widget_calendario(fecha_minima_parametro)
+    print(str(fecha_y_hora))
 
 if __name__ == "__main__":
     main()

@@ -11,6 +11,7 @@ from matplotlib.ticker import FuncFormatter, MaxNLocator # type: ignore
 import matplotlib.dates as mdates
 from datetime import datetime, timedelta
 import locale
+import json
 
 def extraer_cpcodes(empresa, client_secret, host, access_token, client_token, fechas):
     lista_de_cpcodes = []
@@ -34,7 +35,8 @@ def extraer_cpcodes(empresa, client_secret, host, access_token, client_token, fe
     "metrics": "edgeBytes", # Al menos una métrica es necesaria
     "filters": "ca=cacheable",
     }
-    result = s.get(urljoin(baseurl, path), params=querystring).json() # Respuestra tras llamar a la API
+    # Respuestra tras llamar a la API
+    result = s.get(urljoin(baseurl, path), params=querystring).json() 
     data = result.get('data') # Del diccionario "result", extrae los elementos de llave "data".
     for credential in data: # Por elemento de la lista data:
         cpcode = credential.get('cpcode') # Obtener CPcode
@@ -567,4 +569,5 @@ def main():
     return # Este programa debería correrse a través de programa_principal.py
 
 if __name__ == "__main__":
+    # Se asegura de que las funciones puedan ser importadas sin problema.
     main()

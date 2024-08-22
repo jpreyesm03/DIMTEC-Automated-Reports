@@ -176,14 +176,16 @@ def fechas_correctas_ISO_8601(fechas, interval = "NONE"):
         # Fijar fecha inicial en medianoche
         fecha_inicial_modificada = fecha_inicial_modificada[:11] + "00:00" + fecha_inicial_modificada[16:]
 
-        # Si la distancia entre la fecha_final y la fecha_inicial es más de un mes:
+        # Si la distancia entre la fecha_final y la fecha_inicial es menos de un mes:
         if (primer_fecha_mas_reciente_que_segunda_fecha(agregar_tiempo(fecha_inicial_modificada, cambio_tiempo = "1 MES"), fecha_final_modificada)):   
-            # Cambiar fecha final a la fecha inicial un mes después
-            fecha_final_modificada = agregar_tiempo(fecha_inicial_modificada, cambio_tiempo = "1 MES")
-
-        else: # Si la distancia entre la fecha_final y la fecha_inicial es menos de un mes:
             # Fecha_final agregar un día y fijar a medianoche
             fecha_final_modificada = agregar_tiempo(fecha_final_modificada, cambio_tiempo = "1 DIA")
+            
+
+        else: # Si la distancia entre la fecha_final y la fecha_inicial es más de un mes:
+            # Cambiar fecha final a la fecha inicial un mes después
+            print("Para la Tabla Tráfico Total y Estadísticas, el rango de fechas máximo es un mes")
+            fecha_final_modificada = agregar_tiempo(fecha_inicial_modificada, cambio_tiempo = "1 MES")
 
     # return cada fecha 6 horas después para considerar la diferencia de zona horaria. Por default, se toma UTC que va +6 hrs adelante.        
     return [agregar_tiempo(fecha_inicial_modificada, cambio_tiempo = "6 HORAS"), agregar_tiempo(fecha_final_modificada, cambio_tiempo = "6 HORAS")]
@@ -386,7 +388,7 @@ def reportes_generales(archivo, fechas, carpeta_creada):
         # Crea subcarpeta para almacenar todos los reportes de la empresa en cuestión
         subcarpeta_path = crear_carpeta(nombre_de_empresa = empresa, carpeta = carpeta_creada, fechas_para_el_titulo = fechas)
         
-        # Extrae todos los cpcodes
+        # Extraer todos los cpcodes
         cpcodes = extraer_cpcodes(empresa, credenciales[0], credenciales[1], credenciales[2], credenciales[3], fechas_correctas_ISO_8601(fechas, interval = "NONE"))
         # Genera reportes
         print(tabla_de_trafico_por_cpcode(empresa, credenciales[0], credenciales[1], credenciales[2], credenciales[3], fechas_correctas_ISO_8601(fechas, interval = "NONE"), subcarpeta_path, formatear_fechas(fechas[0], fechas[1])))
